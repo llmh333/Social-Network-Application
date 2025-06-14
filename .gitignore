@@ -1,0 +1,10 @@
+# Ignore build files
+target/
+*.class
+
+# Ignore config secrets
+.env
+
+# Ignore IDE settings
+.idea/
+*.iml
