@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 public abstract class DateAuditing {
 
   @CreatedDate
-  @Column(nullable = false, updatable = false)
-  private LocalDateTime createdDate;
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt;
 
   @LastModifiedDate
-  @Column(nullable = false)
-  private LocalDateTime lastModifiedDate;
+  @Column(name = "last_modified_at", nullable = false)
+  private LocalDateTime lastModifiedAt;
 
 }
