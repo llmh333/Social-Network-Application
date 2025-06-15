@@ -15,9 +15,9 @@
     <description>project-base</description>
 
     <properties>
-        <java.version>11</java.version>
-        <lombok.version>1.18.22</lombok.version>
-        <mapstruct.version>1.4.2.Final</mapstruct.version>
+        <java.version>17</java.version>
+        <lombok.version>1.18.30</lombok.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
     </properties>
 
     <dependencies>
