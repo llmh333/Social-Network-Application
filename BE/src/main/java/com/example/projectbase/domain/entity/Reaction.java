@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Reaction")
+@Table(name = "reaction")
 @Getter
 @Setter
 @Builder
