@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+<<<<<<< BE/src/main/java/com/example/projectbase/domain/entity/Comment.java
 @Table(name = "comment")
 @Getter
 @Setter
