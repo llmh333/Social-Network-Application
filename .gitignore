@@ -1,0 +1,12 @@
+# File: .gitignore
+
+# Bỏ qua các file build
+target/
+build/
+
+# Bỏ qua IDE settings
+.idea/
+*.iml
+
+### application.properties ###
+src/main/resources/application.properties
