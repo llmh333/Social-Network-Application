@@ -20,13 +20,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
 @EnableConfigurationProperties({AdminInfoProperties.class})
 @SpringBootApplication
 public class ProjectBaseApplication {
-
   private final UserRepository userRepository;
 
   private final RoleRepository roleRepository;
@@ -34,17 +36,48 @@ public class ProjectBaseApplication {
   private final PasswordEncoder passwordEncoder;
 
   public static void main(String[] args) {
-    Environment env = SpringApplication.run(ProjectBaseApplication.class, args).getEnvironment();
-    String appName = env.getProperty("spring.application.name");
-    if (appName != null) {
-      appName = appName.toUpperCase();
-    }
-    String port = env.getProperty("server.port");
-    log.info("-------------------------START " + appName
-        + " Application------------------------------");
-    log.info("   Application         : " + appName);
-    log.info("   Url swagger-ui      : http://localhost:" + port + "/swagger-ui.html");
-    log.info("-------------------------START SUCCESS " + appName
-        + " Application------------------------------");
+  Environment env = SpringApplication.run(ProjectBaseApplication.class, args).getEnvironment();
+  String appName = env.getProperty("spring.application.name");
+  if (appName != null) {
+    appName = appName.toUpperCase();
   }
+  String port = env.getProperty("server.port");
+  log.info("-------------------------START " + appName
+      + " Application------------------------------");
+  log.info("   Application         : " + appName);
+  log.info("   Url swagger-ui      : http://localhost:" + port + "/swagger-ui.html");
+  log.info("-------------------------START SUCCESS " + appName
+      + " Application------------------------------");
+  }
+  @Bean
+  CommandLineRunner init(AdminInfoProperties userInfo) {
+    return args -> {
+      //init role
+      Optional<Role> role = Optional.ofNullable(roleRepository.findByRoleName(RoleConstant.ADMIN));
+      if (role.isEmpty()) {
+        List<String> permissions = new ArrayList<>();
+        permissions.add("CREATE");
+        permissions.add("READ");
+        permissions.add("UPDATE");
+        permissions.add("DELETE");
+        roleRepository.save(Role.builder().name(RoleConstant.ADMIN).permissions(permissions).build());
+      }
+      //init admin
+      Optional<User> user = userRepository.findByUsername("admin");
+      if (user.isEmpty()) {
+        User admin = User.builder()
+                .username(userInfo.getUsername())
+                .password(passwordEncoder.encode(userInfo.getPassword()))
+                .firstName(userInfo.getFirstName())
+                .lastName(userInfo.getLastName())
+                .role(roleRepository.findByRoleName(RoleConstant.ADMIN))
+                .gender(GenderConstant.FEMALE)
+                .email(userInfo.getEmail())
+                .dob(LocalDate.now())
+                .build();
+        userRepository.save(admin);
+      }
+    };
+  }
+
 }

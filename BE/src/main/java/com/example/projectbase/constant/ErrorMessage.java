@@ -31,4 +31,10 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_ID = "exception.user.not.found.id";
   }
 
+  public static class Media {
+    public static final String ERR_NOT_FOUND_MEDIA = "exception.media.not.found";
+    public static final String ERR_MAX_SIZE_UPLOAD_MEDIA = "exception.media.upload.maxsize";
+    public static final String ERR_INVALID_MEDIA_TYPE = "exception.media.upload.invalid.format";
+  }
+
 }
