@@ -15,4 +15,8 @@ public class CommonResponseDto {
 
   private String message;
 
+  public CommonResponseDto(boolean status, String message) {
+    this.status = status;
+    this.message = message;
+  }
 }
