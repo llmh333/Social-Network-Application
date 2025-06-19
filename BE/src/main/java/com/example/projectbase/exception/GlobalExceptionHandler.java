@@ -120,7 +120,13 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public ResponseEntity<RestData<?>> handleMaxUploadSizeException(MaxUploadSizeExceededException ex) {
-    String message = messageSource.getMessage(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_MEDIA, new Object[]{100}, LocaleContextHolder.getLocale());
+    String message = messageSource.getMessage(ErrorMessage.Media.ERR_MAX_SIZE_REQUEST_MEDIA, new Object[]{100}, LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
+  }
+
+  @ExceptionHandler(MaxUploadSizeMediaException.class)
+  public ResponseEntity<RestData<?>> handleMaxUploadSizeMediaException(MaxUploadSizeMediaException ex) {
+    String message = messageSource.getMessage(ex.getMessage(), new Object[]{100}, LocaleContextHolder.getLocale());
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
   }
 

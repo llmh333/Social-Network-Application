@@ -3,11 +3,13 @@ package com.example.projectbase.controller;
 import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.exception.InvalidException;
+import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.impl.VideoProcessingService;
@@ -28,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestApiV1
@@ -41,6 +44,9 @@ public class MediaController {
     @Operation(summary = "API Upload Video")
     @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO)
     public ResponseEntity<?> uploadVideo(@RequestParam("file") MultipartFile multipartFile) throws IOException, InterruptedException {
+        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
+        }
         File largeFile = videoProcessingService.compressVideo(multipartFile);
         MediaResponseDto responseDto = mediaService.uploadVideo(multipartFile, largeFile);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
@@ -48,8 +54,22 @@ public class MediaController {
 
     @Operation(summary = "API Upload Image")
     @PostMapping(UrlConstant.Media.UPLOAD_MEDIA_IMAGE)
-    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
-        MediaResponseDto responseDto = mediaService.uploadImage(file);
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile multipartFile) {
+        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_IMAGE) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
+        }
+        MediaResponseDto responseDto = mediaService.uploadImage(multipartFile);
+        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
+    }
+
+    @Operation(summary = "API Upload Audio")
+    @PostMapping(UrlConstant.Media.UPLOAD_MEDIA_AUDIO)
+    public ResponseEntity<?> uploadAudio(@RequestParam("file") MultipartFile multipartFile) throws IOException, InterruptedException {
+        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_AUDIO) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
+        }
+        File largeFile = videoProcessingService.compressAudio(multipartFile);
+        MediaResponseDto responseDto = mediaService.uploadAudio(multipartFile, largeFile);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
@@ -59,6 +79,7 @@ public class MediaController {
         List<MediaResponseDto> mediaResponseDtos = mediaService.uploadMultiImage(file);
         return VsResponseUtil.success(HttpStatus.CREATED, mediaResponseDtos);
     }
+
     @Operation(summary = "API Get Media")
     @GetMapping(UrlConstant.Media.GET_MEDIAS)
     public ResponseEntity<?> getAllMedia(@Valid @ParameterObject PaginationFullRequestDto paginationFullRequestDto) {

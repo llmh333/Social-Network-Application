@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
@@ -13,6 +14,7 @@ import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.exception.InvalidException;
+import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.UserRepository;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -197,44 +200,85 @@ public class MediaServiceImpl implements MediaService {
         return mediaResponseDtos;
     }
 
+    @Override
+    public MediaResponseDto uploadAudio(MultipartFile multipartFile, File file) {
+        validateFile(multipartFile);
+        try {
+            String publicId = generatePublicIdMedia(multipartFile, "audio");
+            Map<String, Object> metaData = ObjectUtils.asMap(
+                    "resource_type", "video",
+                    "quality", "auto",
+                    "chunk_size", 7000000,
+                    "eager_async", true,
+                    "public_id", publicId,
+                    "invalidate", true
+            );
+            Map<String, Object> result = cloudinary.uploader().uploadLarge(file, metaData);
+            log.info("result: {}", result);
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+            Media media = Media.builder()
+                    .dataSize(Long.valueOf((Integer) result.get("bytes")))
+                    .format(result.get("format").toString())
+                    .user(user)
+                    .publicId(result.get("public_id").toString())
+                    .secureUrl(result.get("secure_url").toString())
+                    .resourceType("audio")
+                    .build();
+            Media savedMedia = mediaRepository.save(media);
+            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
+            mediaResponseDto.setAuthorId(user.getId());
+            return mediaResponseDto;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            file.delete();
+        }
+        return null;
+    }
+
     @Transactional
     @Override
     public boolean deleteMedia(List<String> publicIdList) {
-        try {
-            List<Media> mediaList = mediaRepository.findAllByPublicIdIn(publicIdList);
-            if (mediaList.isEmpty()) {
-                throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(publicIdList)});
+        List<Media> mediaList = mediaRepository.findAllByPublicIdIn(publicIdList);
+        log.info("mediaList: {}", mediaList.toString());
+        List<String> invalidPublicId = new ArrayList<>();
+        for (String publicId : publicIdList) {
+            if (!mediaList.stream().anyMatch(media -> media.getPublicId().equals(publicId))) {
+                invalidPublicId.add(publicId);
             }
-            List<Long> invalidId = new ArrayList<>();
-            for (Media media : mediaList) {
-                if (!publicIdList.contains(media.getPublicId())) {
-                    invalidId.add(media.getId());
-                }
-            }
-            if (invalidId.isEmpty()) {
-                mediaRepository.deleteAllByPublicIdIn(publicIdList);
-                for (Media media : mediaList) {
-                    Map<String, Object> metaData = ObjectUtils.asMap(
-                            "resource_type", media.getResourceType(),
-                            "invalidated", true
-                    );
-                    Map<String, String> result = cloudinary.uploader().destroy(media.getPublicId(), metaData);
-                }
-            } else {
-                throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(invalidId)});
-            }
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return false;
+        if (mediaList.isEmpty()) {
+            throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(invalidPublicId)});
+        }
+        else if (invalidPublicId.isEmpty()) {
+            log.info("invalidId: {}", invalidPublicId.toString());
+            mediaRepository.deleteAllByPublicIdIn(publicIdList);
+            for (Media media : mediaList) {
+                Map<String, Object> metaData = ObjectUtils.asMap(
+                        "resource_type", media.getResourceType(),
+                        "invalidated", true
+                );
+                try {
+                    Map<String, String> result = cloudinary.uploader().destroy(media.getPublicId(), metaData);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(invalidPublicId)});
+        }
+        return true;
     }
 
     private void validateFile(MultipartFile file) {
         log.info("validateFile: {}", file.getContentType());
         String formatFile = file.getContentType();
-        if (formatFile == null || (!formatFile.startsWith("video/") && !formatFile.startsWith("image/"))) {
+        if (formatFile == null || (!formatFile.startsWith("video/") && !formatFile.startsWith("image/") && !formatFile.startsWith("audio/"))) {
             throw new InvalidException(ErrorMessage.Media.ERR_INVALID_MEDIA_TYPE);
+        }
+        if (file.getSize() > MediaConstant.MAX_SIZE_IMAGE) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
         }
     }
     private String generatePublicIdMedia(MultipartFile file, String typeMedia) {
