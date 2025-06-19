@@ -18,6 +18,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
@@ -120,6 +121,12 @@ public class GlobalExceptionHandler {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<RestData<?>> handleMaxUploadSizeException(MaxUploadSizeExceededException ex) {
+    String message = messageSource.getMessage(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_MEDIA, new Object[]{100}, LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
   }
 
 }
