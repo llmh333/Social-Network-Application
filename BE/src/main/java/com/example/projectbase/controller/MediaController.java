@@ -4,12 +4,14 @@ import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.MediaConstant;
+import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.exception.InvalidException;
+import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.service.MediaService;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestApiV1
@@ -45,6 +48,9 @@ public class MediaController {
     @Operation(summary = "API Upload Video")
     @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO)
     public ResponseEntity<?> uploadVideo(@RequestParam("file") MultipartFile multipartFile) throws IOException, InterruptedException {
+        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
+        }
         if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
             throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
         }
@@ -83,6 +89,7 @@ public class MediaController {
         List<MediaResponseDto> mediaResponseDtos = mediaService.uploadMultiImage(file);
         return VsResponseUtil.success(HttpStatus.CREATED, mediaResponseDtos);
     }
+
 
     @Operation(summary = "API Get Media")
     @GetMapping(UrlConstant.Media.GET_MEDIA_BY_RESOURCE_TYPE)
