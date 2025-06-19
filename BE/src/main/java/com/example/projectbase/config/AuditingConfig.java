@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 
 import java.util.Optional;
 
@@ -20,19 +21,35 @@ public class AuditingConfig {
     return new AuditorAwareImpl();
   }
 
-}
+  private static class AuditorAwareImpl implements AuditorAware<String> {
 
-class AuditorAwareImpl implements AuditorAware<String> {
+    @Override
+    public Optional<String> getCurrentAuditor() {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      if (authentication == null ||
+              !authentication.isAuthenticated() ||
+              authentication instanceof AnonymousAuthenticationToken) {
+        return Optional.empty();
+      }
 
-  @Override
-  public Optional<String> getCurrentAuditor() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
-      return Optional.empty();
+      Object principal = authentication.getPrincipal();
+
+      // 1) JWT login → UserPrincipal
+      if (principal instanceof UserPrincipal) {
+        return Optional.ofNullable(((UserPrincipal) principal).getId());
+      }
+
+      // 2) OAuth2 login → DefaultOAuth2User
+      if (principal instanceof DefaultOAuth2User) {
+        DefaultOAuth2User oauthUser = (DefaultOAuth2User) principal;
+        // Lấy email (hoặc attribute khác bạn muốn dùng làm auditor)
+        String email = oauthUser.getAttribute("email");
+        return Optional.ofNullable(email);
+      }
+
+      // 3) Thường fallback sang toString()
+      return Optional.of(principal.toString());
     }
-    UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-    return Optional.ofNullable(userPrincipal.getId());
   }
 
 }
-

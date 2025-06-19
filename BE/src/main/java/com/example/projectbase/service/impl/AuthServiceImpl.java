@@ -11,10 +11,17 @@ import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -22,15 +29,16 @@ import javax.servlet.http.HttpServletRequest;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+  private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
   private final AuthenticationManager authenticationManager;
-
   private final JwtTokenProvider jwtTokenProvider;
+  private final UserDetailsService userDetailsService;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
     try {
       Authentication authentication = authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(request.getEmailOrPhone(), request.getPassword()));
+              new UsernamePasswordAuthenticationToken(request.getEmailOrPhone(), request.getPassword()));
       SecurityContextHolder.getContext().setAuthentication(authentication);
       UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
@@ -43,14 +51,39 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
+
   @Override
   public TokenRefreshResponseDto refresh(TokenRefreshRequestDto request) {
-    return null;
+    logger.info("Processing refresh token request");
+
+    String refreshToken = request.getRefreshToken();
+    if (!StringUtils.hasText(refreshToken)) {
+      logger.error("Empty refresh token");
+      throw new UnauthorizedException("Refresh token is required");
+    }
+
+    try {
+      if (jwtTokenProvider.validateToken(refreshToken) && !jwtTokenProvider.isTokenExpired(refreshToken)) {
+        String username = jwtTokenProvider.extractClaimUsername(refreshToken);
+        UserPrincipal userPrincipal = (UserPrincipal) userDetailsService.loadUserByUsername(username);
+        String newAccessToken = jwtTokenProvider.generateToken(userPrincipal, false);
+        String newRefreshToken = jwtTokenProvider.generateToken(userPrincipal, true);
+        logger.info("Refresh token successful for user: {}", username);
+        return new TokenRefreshResponseDto(newAccessToken, newRefreshToken);
+      } else {
+        logger.error("Invalid or expired refresh token: {}", refreshToken);
+        throw new UnauthorizedException("Invalid or expired refresh token");
+      }
+    } catch (Exception e) {
+      logger.error("Error processing refresh token: {}", refreshToken, e);
+      throw new UnauthorizedException("Failed to refresh token: " + e.getMessage());
+    }
   }
 
   @Override
   public CommonResponseDto logout(HttpServletRequest request) {
-    return null;
+    logger.info("Processing logout request");
+    SecurityContextHolder.clearContext();
+    return new CommonResponseDto(true, "Logged out successfully");
   }
-
 }
