@@ -49,11 +49,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         UserPrincipal principal = oAuthService.processOAuthPostLogin(authToken);
 
         String token = jwtTokenProvider.generateToken(principal, false);
-
-        System.out.println(token + "helooooooooooooooooooo");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType("text/plain;charset=UTF-8");
-        response.getWriter().write(token);
+        response.setContentType("application/json;charset=UTF-8");
+        Map<String, Object> tokenResponse = new HashMap<>();
+        tokenResponse.put("accessToken", token);
+        new ObjectMapper().writeValue(response.getWriter(), tokenResponse);
         response.getWriter().flush();
+
+//        // Redirect với JWT token
+//        String redirectUrl = "http://localhost:3000/oauth-success?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+//        response.sendRedirect(redirectUrl);
     }
 }

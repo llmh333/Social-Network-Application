@@ -52,7 +52,6 @@ public class UserPrincipal implements UserDetails {
             authorities.add(new SimpleGrantedAuthority(user.getRole().getName()));
         }
 
-
         return new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(),
                 user.getUsername(), user.getPassword(), authorities);
     }

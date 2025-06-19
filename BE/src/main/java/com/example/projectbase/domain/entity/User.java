@@ -2,6 +2,7 @@ package com.example.projectbase.domain.entity;
 
 import com.example.projectbase.constant.GenderConstant;
 import com.example.projectbase.domain.entity.common.DateAuditing;
+import com.example.projectbase.constant.AuthProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -27,10 +28,10 @@ public class User extends DateAuditing {
   @Column(insertable = false, updatable = false, nullable = false, columnDefinition = "CHAR(36)")
   private String id;
 
-  @Column(nullable = true, unique = true)
+  @Column(nullable = false, unique = true)
   private String username;
 
-  @Column(nullable = true)
+  @Column(nullable = false)
   @JsonIgnore
   private String password;
 
@@ -75,124 +76,4 @@ public class User extends DateAuditing {
   @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "setting_id", referencedColumnName = "id")
   private UserSetting userSetting;
-
-  public String getEmail() {
-    return email;
-  }
-
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  public String getFirstName() {
-    return firstName;
-  }
-
-  public void setFirstName(String firstName) {
-    this.firstName = firstName;
-  }
-
-  public String getLastName() {
-    return lastName;
-  }
-
-  public void setLastName(String lastName) {
-    this.lastName = lastName;
-  }
-
-  public GenderConstant getGender() {
-    return gender;
-  }
-
-  public void setGender(GenderConstant gender) {
-    this.gender = gender;
-  }
-
-  public LocalDate getDob() {
-    return dob;
-  }
-
-  public void setDob(LocalDate dob) {
-    this.dob = dob;
-  }
-
-  public AuthProvider getProvider() {
-    return provider;
-  }
-
-  public void setProvider(AuthProvider provider) {
-    this.provider = provider;
-  }
-
-  public String getProviderId() {
-    return providerId;
-  }
-
-  public void setProviderId(String providerId) {
-    this.providerId = providerId;
-  }
-
-  public String getImageUrl() {
-    return imageUrl;
-  }
-
-  public void setImageUrl(String imageUrl) {
-    this.imageUrl = imageUrl;
-  }
-
-  public Role getRole() {
-    return role;
-  }
-
-  public void setRole(Role role) {
-    this.role = role;
-  }
-
-  public List<Follow> getFollowings() {
-    return followings;
-  }
-
-  public void setFollowings(List<Follow> followings) {
-    this.followings = followings;
-  }
-
-  public List<Follow> getFollowers() {
-    return followers;
-  }
-
-  public void setFollowers(List<Follow> followers) {
-    this.followers = followers;
-  }
-
-  public UserSetting getUserSetting() {
-    return userSetting;
-  }
-
-  public void setUserSetting(UserSetting userSetting) {
-    this.userSetting = userSetting;
-  }
 }
