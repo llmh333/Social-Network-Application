@@ -9,7 +9,6 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-<<<<<<< BE/src/main/java/com/example/projectbase/domain/entity/Reaction.java
 @Table(name = "reaction")
 @Getter
 @Setter

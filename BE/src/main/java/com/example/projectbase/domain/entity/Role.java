@@ -33,5 +33,4 @@ public class Role {
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_id"))
   private List<String> permissions = new ArrayList<>();
-
 }
