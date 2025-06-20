@@ -4,11 +4,14 @@ import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
+import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
+import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -18,7 +21,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,10 +34,22 @@ public class AuthController {
 
   private final AuthService authService;
 
+  @Operation(summary = "API Đăng ký tài khoản")
+  @PostMapping(UrlConstant.Auth.REGISTER)
+  public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto req) {
+    LoginResponseDto tokens = authService.register(req);
+    return VsResponseUtil.success(HttpStatus.CREATED, tokens);
+  }
+
   @Operation(summary = "API Login")
   @PostMapping(UrlConstant.Auth.LOGIN)
   public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
     return VsResponseUtil.success(authService.login(request));
+  }
+
+  @GetMapping(UrlConstant.Auth.OAUTH2_LOGIN + "/google")
+  public void googleLoginRedirect(HttpServletResponse res) throws IOException {
+    res.sendRedirect("/oauth2/authorization/google");
   }
 
   @Operation(summary = "API test")

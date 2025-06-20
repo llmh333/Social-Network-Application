@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -76,6 +77,7 @@ public class OAuthServiceImpl {
         User user = new User();
         user.setUsername(email);
         user.setEmail(email);
+        user.setPassword("");
         user.setFirstName(getAttributeOrDefault(attributes, "given_name", ""));
         user.setLastName(getAttributeOrDefault(attributes, "family_name", ""));
         user.setDob(DEFAULT_DOB);
@@ -93,8 +95,14 @@ public class OAuthServiceImpl {
     }
 
     private Role getDefaultRole() {
-        return roleRepository.findByName(RoleConstant.USER)
-                .orElseThrow(() -> new RuntimeException("ROLE_USER not found in DB"));
+            return roleRepository.findByName(RoleConstant.USER)
+                    .orElseGet(() -> {
+                        Role userRole = Role.builder()
+                                .name(RoleConstant.USER)
+                                .permissions(List.of("READ"))
+                                .build();
+                        return roleRepository.save(userRole);
+                    });
     }
 
     private String getAttributeOrDefault(Map<String, Object> attributes, String key, String defaultValue) {
