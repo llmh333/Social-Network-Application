@@ -16,4 +16,5 @@ public interface AuthService {
 
   CommonResponseDto logout(HttpServletRequest request);
 
+  LoginResponseDto signUp(String email, String password);
 }

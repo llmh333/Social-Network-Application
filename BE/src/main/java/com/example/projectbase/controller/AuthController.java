@@ -4,6 +4,8 @@ import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
+import com.example.projectbase.domain.dto.request.UserCreateDto;
+import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +35,12 @@ public class AuthController {
   @PostMapping("auth/test")
   public String login(@ValidFileImage MultipartFile multipartFile) {
     return multipartFile.getContentType();
+  }
+
+  @Operation(summary = "API signup")
+  @PostMapping(UrlConstant.Auth.SIGNUP)
+  public LoginResponseDto signUp(@Valid @RequestBody UserCreateDto userCreateDto) {
+    return authService.signUp(userCreateDto.getUsername(), userCreateDto.getPassword());
   }
 
 }

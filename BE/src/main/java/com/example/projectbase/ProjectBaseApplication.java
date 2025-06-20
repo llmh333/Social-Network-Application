@@ -17,7 +17,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -32,6 +31,8 @@ public class ProjectBaseApplication {
   private final RoleRepository roleRepository;
 
   private final PasswordEncoder passwordEncoder;
+
+
 
   public static void main(String[] args) {
     Environment env = SpringApplication.run(ProjectBaseApplication.class, args).getEnvironment();

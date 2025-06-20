@@ -6,17 +6,22 @@ import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
 import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
+import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.exception.UnauthorizedException;
+import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,11 @@ public class AuthServiceImpl implements AuthService {
   private final AuthenticationManager authenticationManager;
 
   private final JwtTokenProvider jwtTokenProvider;
+
+  private final UserRepository userRepository;
+
+  @Autowired
+  private PasswordEncoder passwordEncoder;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -51,6 +61,33 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public CommonResponseDto logout(HttpServletRequest request) {
     return null;
+  }
+
+  @Override
+  public LoginResponseDto signUp(String username, String password) {
+//
+//        LoginResponseDto validation = validateEmailAndPassword(email, password);
+//        if (!validation.isSuccessful()) {
+//            return validation;
+//        }
+
+
+    Optional<User> existingUser = userRepository.findByUsername(username);
+    if (existingUser.isPresent()) {
+      return new LoginResponseDto("User already exists", false);
+    }
+
+    User user = new User();
+    user.setUsername(username);
+    user.setPassword(password);
+
+    // Hash the password before saving it
+//    String hashedPassword = passwordEncoder.encode(password);
+//    user.setPassword(hashedPassword);
+
+    userRepository.save(user);
+
+    return new LoginResponseDto("User successfully registered", true);
   }
 
 }
