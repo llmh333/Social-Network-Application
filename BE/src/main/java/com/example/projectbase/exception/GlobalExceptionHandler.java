@@ -14,9 +14,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
@@ -58,7 +60,6 @@ public class GlobalExceptionHandler {
     });
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
   }
-
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex) {
@@ -66,6 +67,11 @@ public class GlobalExceptionHandler {
     String message = messageSource.getMessage(ErrorMessage.ERR_EXCEPTION_GENERAL, null,
         LocaleContextHolder.getLocale());
     return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, message);
+  }
+
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<RestData<?>> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, ex.getParameterName() + " parameter is missing");
   }
 
   //Exception custom
@@ -115,6 +121,18 @@ public class GlobalExceptionHandler {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<RestData<?>> handleMaxUploadSizeException(MaxUploadSizeExceededException ex) {
+    String message = messageSource.getMessage(ErrorMessage.Media.ERR_MAX_SIZE_REQUEST_MEDIA, new Object[]{100}, LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
+  }
+
+  @ExceptionHandler(MaxUploadSizeMediaException.class)
+  public ResponseEntity<RestData<?>> handleMaxUploadSizeMediaException(MaxUploadSizeMediaException ex) {
+    String message = messageSource.getMessage(ex.getMessage(), new Object[]{100}, LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
   }
 
 }
