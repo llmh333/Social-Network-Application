@@ -11,6 +11,7 @@ import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -29,8 +31,10 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
     try {
+      log.info("User: " + request.getUsernameOrEmail());
       Authentication authentication = authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(request.getEmailOrPhone(), request.getPassword()));
+          new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword()));
+
       SecurityContextHolder.getContext().setAuthentication(authentication);
       UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
