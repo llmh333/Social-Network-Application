@@ -1,12 +1,14 @@
 package com.example.projectbase.domain.dto.pagination;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
 @Getter
-@Builder
 public class PagingMeta {
 
   private Long totalElements;

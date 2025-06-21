@@ -11,23 +11,11 @@ public enum SortByDataConstant implements SortByInterface {
         case "lastName":
           return "last_name";
         case "lastModifiedDate":
-          return "last_modified_at";
+          return "last_modified_date";
         default:
-          return "created_at";
+          return "created_date";
       }
     }
   },
-
-  MEDIA {
-    @Override
-    public String getSortBy(String sortBy) {
-      switch (sortBy) {
-        case "data_size":
-          return "dataSize";
-        default:
-          return "createdAt";
-      }
-    }
-  }
 
 }
