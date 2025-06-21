@@ -7,6 +7,7 @@ import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
+import com.example.projectbase.domain.dto.pagination.PaginationRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
@@ -65,8 +66,13 @@ public class MediaServiceImpl implements MediaService {
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, sort);
 
-        Page<Media> mediaPage = mediaRepository.searchByKeyWord(keyword, pageable);
-        List<MediaResponseDto> mediaPageDto = mediaPage.stream().map(mediaMapper::toMediaResponseDto).collect(Collectors.toList());
+        Page<Media> mediaPage = mediaRepository.searchMediaByResourceType(keyword, pageable);
+        List<MediaResponseDto> responseDtoList = new ArrayList<>();
+        for (Media media : mediaPage) {
+            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(media);
+            mediaResponseDto.setAuthorId(media.getUser().getId());
+            responseDtoList.add(mediaResponseDto);
+        }
         PagingMeta pagingMeta = PagingMeta.builder()
                 .pageNum(pageNum + 1)
                 .pageSize(pageSize)
@@ -75,7 +81,38 @@ public class MediaServiceImpl implements MediaService {
                 .sortType("")
                 .totalElements(mediaPage.stream().count())
                 .build();
-        return new PaginationResponseDto<>(pagingMeta, mediaPageDto);
+        return new PaginationResponseDto<>(pagingMeta, responseDtoList);
+    }
+
+    @Override
+    public MediaResponseDto getMediaByPublicId(String publicId) {
+        Media media = mediaRepository.findMediaByPublicId(publicId);
+        if (media == null) {
+            throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{publicId});
+        }
+        return mediaMapper.toMediaResponseDto(media);
+    }
+
+    @Override
+    public PaginationResponseDto<MediaResponseDto> getAudioByTitleOrCategoryOrSinger(PaginationRequestDto paginationRequestDto, String keyword) {
+        int pageNum = paginationRequestDto.getPageNum();
+        int pageSize = paginationRequestDto.getPageSize();
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+
+        Page<Media> mediaPage = mediaRepository.searchByTitleOrCategoryOrSingerName(keyword, pageable);
+        List<MediaResponseDto> responseDtoList = new ArrayList<>();
+        for (Media media : mediaPage) {
+            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(media);
+            mediaResponseDto.setAuthorId(media.getUser().getId());
+            responseDtoList.add(mediaResponseDto);
+        }
+        PagingMeta pagingMeta = PagingMeta.builder()
+                .pageNum(pageNum + 1)
+                .pageSize(pageSize)
+                .totalPages(mediaPage.getTotalPages())
+                .totalElements(mediaPage.stream().count())
+                .build();
+        return new PaginationResponseDto<>(pagingMeta, responseDtoList);
     }
 
     @Override
@@ -90,20 +127,10 @@ public class MediaServiceImpl implements MediaService {
                     "chunk_size", 7000000,
                     "eager_async", true,
                     "public_id", publicId,
-                    "streaming_profile", "hd",
                     "invalidate", true,
                     "eager", Arrays.asList(
                             new Transformation()
                                     .fetchFormat("m3u8"),
-                            new Transformation()
-                                    .width(1080)
-                                    .height(1920)
-                                    .crop("fill")
-                                    .gravity("center")
-                                    .quality("auto:good")
-                                    .videoCodec("h264")
-                                    .audioCodec("aac")
-                                    .fetchFormat("auto"),
                             new Transformation()
                                     .startOffset("auto")
                                     .width(1080)
@@ -201,7 +228,7 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public MediaResponseDto uploadAudio(MultipartFile multipartFile, File file) {
+    public MediaResponseDto uploadAudio(MultipartFile multipartFile, File file, String title, String category, String singerName) {
         validateFile(multipartFile);
         try {
             String publicId = generatePublicIdMedia(multipartFile, "audio");
@@ -224,6 +251,9 @@ public class MediaServiceImpl implements MediaService {
                     .publicId(result.get("public_id").toString())
                     .secureUrl(result.get("secure_url").toString())
                     .resourceType("audio")
+                    .title(title)
+                    .category(category)
+                    .singerName(singerName)
                     .build();
             Media savedMedia = mediaRepository.save(media);
             MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
@@ -277,8 +307,14 @@ public class MediaServiceImpl implements MediaService {
         if (formatFile == null || (!formatFile.startsWith("video/") && !formatFile.startsWith("image/") && !formatFile.startsWith("audio/"))) {
             throw new InvalidException(ErrorMessage.Media.ERR_INVALID_MEDIA_TYPE);
         }
-        if (file.getSize() > MediaConstant.MAX_SIZE_IMAGE) {
+        if ((formatFile.startsWith("image/") && file.getSize() > MediaConstant.MAX_SIZE_IMAGE)) {
             throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
+        }
+        if ((formatFile.startsWith("video/") && file.getSize() > MediaConstant.MAX_SIZE_VIDEO)) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
+        }
+        if ((formatFile.startsWith("audio/") && file.getSize() > MediaConstant.MAX_SIZE_AUDIO)) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
         }
     }
     private String generatePublicIdMedia(MultipartFile file, String typeMedia) {

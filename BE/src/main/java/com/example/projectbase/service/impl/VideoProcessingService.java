@@ -24,13 +24,14 @@ public class VideoProcessingService {
                 "ffmpeg",
                 "-y",
                 "-i", originalFile.getAbsolutePath(),
-                "-r", "60",
+                "-r", "30",
                 "-c:v", "libx264",
                 "-crf", "28",
-                "-preset", "fast",
-                "-vf", "scale=720:1280",
+                "-preset", "superfast",
+                "-tune", "fastdecode",
+                "-vf", "scale='min(1080,iw)':'min(1920,ih)':force_original_aspect_ratio=decrease",
                 "-c:a", "aac",
-                "-b:a", "320k",
+                "-b:a", "128k",
                 "-movflags", "faststart",
                 compressedFile.getAbsolutePath()
         );
@@ -52,7 +53,8 @@ public class VideoProcessingService {
                 "-i", originalFile.getAbsolutePath(),
                 "-vn",
                 "-ac", "2",
-                "-b:a", "320k",
+                "-b:a", "256k",
+                "-preset", "ultrafast",
                 compressedFile.getAbsolutePath()
         );
         Process p = pb.inheritIO().start();

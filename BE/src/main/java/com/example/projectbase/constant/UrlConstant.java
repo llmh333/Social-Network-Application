@@ -25,7 +25,9 @@ public class UrlConstant {
 
   public static class Media {
     private static final String PRE_FIX = "/media";
-    public static final String GET_MEDIAS = PRE_FIX;
+    public static final String GET_MEDIA_BY_RESOURCE_TYPE = PRE_FIX + "/";
+    public static final String GET_MEDIA_BY_PUBLIC_ID = PRE_FIX + "/{publicId}";
+    public static final String GET_AUDIO_BY_TITLE_OR_CATEGORY_OR_SINGER = PRE_FIX + "/audio";
     public static final String UPLOAD_MEDIA_VIDEO = PRE_FIX + "/upload/video";
     public static final String UPLOAD_MEDIA_IMAGE = PRE_FIX + "/upload/image";
     public static final String UPLOAD_MEDIA_AUDIO = PRE_FIX + "/upload/audio";

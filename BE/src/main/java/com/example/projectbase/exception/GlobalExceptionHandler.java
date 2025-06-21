@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -59,7 +60,6 @@ public class GlobalExceptionHandler {
     });
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
   }
-
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex) {
@@ -67,6 +67,11 @@ public class GlobalExceptionHandler {
     String message = messageSource.getMessage(ErrorMessage.ERR_EXCEPTION_GENERAL, null,
         LocaleContextHolder.getLocale());
     return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, message);
+  }
+
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<RestData<?>> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, ex.getParameterName() + " parameter is missing");
   }
 
   //Exception custom

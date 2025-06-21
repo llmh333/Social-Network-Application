@@ -18,6 +18,12 @@ public class MediaResponseDto {
     private String secureUrl;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String title;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String category;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String playbackUrl;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -30,7 +36,12 @@ public class MediaResponseDto {
     private Long dataSize;
     private String format;
     private String authorId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long height;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long width;
+
     private LocalDateTime createdAt;
 }
