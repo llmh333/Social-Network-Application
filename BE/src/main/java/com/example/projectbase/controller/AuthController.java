@@ -6,6 +6,7 @@ import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
+import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,9 +39,9 @@ public class AuthController {
   }
 
   @Operation(summary = "API signup")
-  @PostMapping(UrlConstant.Auth.SIGNUP)
-  public LoginResponseDto signUp(@Valid @RequestBody UserCreateDto userCreateDto) {
-    return authService.signUp(userCreateDto.getUsername(), userCreateDto.getPassword());
+  @PostMapping("/signup")
+  public ResponseEntity<SignUpResponseDto> signUp(@Valid @RequestBody UserCreateDto request) {
+    SignUpResponseDto response = authService.signUp(request);
+    return ResponseEntity.ok(response);
   }
-
 }

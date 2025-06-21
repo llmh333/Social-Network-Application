@@ -3,8 +3,10 @@ package com.example.projectbase.service.impl;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
+import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
+import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.exception.UnauthorizedException;
@@ -21,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -63,30 +66,27 @@ public class AuthServiceImpl implements AuthService {
     return null;
   }
 
-  @Override
-  public LoginResponseDto signUp(String username, String password) {
-//        LoginResponseDto validation = validateEmailAndPassword(email, password);
-//        if (!validation.isSuccessful()) {
-//            return validation;
-//        }
+@Override
+public SignUpResponseDto signUp(UserCreateDto request) {
 
-
-    Optional<User> existingUser = userRepository.findByUsername(username);
-    if (existingUser.isPresent()) {
-      return new LoginResponseDto("User already exists", false);
-    }
-
-    User user = new User();
-    user.setUsername(username);
-    user.setPassword(password);
-
-    // Hash the password before saving it
-//    String hashedPassword = passwordEncoder.encode(password);
-//    user.setPassword(hashedPassword);
-
-    userRepository.save(user);
-
-    return new LoginResponseDto("User successfully registered", true);
+  Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+  if (existingUser.isPresent()) {
+    return new SignUpResponseDto("User already exists", false);
   }
+
+  User user = new User();
+  user.setUsername(request.getUsername());
+  user.setFirstName(request.getFirstName());
+  user.setLastName(request.getLastName());
+
+  String hashedPassword = passwordEncoder.encode(request.getPassword());
+  user.setPassword(hashedPassword);
+
+  user.setCreatedAt(LocalDateTime.now());
+  user.setLastModifiedAt(LocalDateTime.now());
+
+  userRepository.save(user);
+  return new SignUpResponseDto("User successfully registered", true);
+}
 
 }
