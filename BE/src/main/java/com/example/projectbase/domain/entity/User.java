@@ -2,6 +2,7 @@ package com.example.projectbase.domain.entity;
 
 import com.example.projectbase.constant.GenderConstant;
 import com.example.projectbase.domain.entity.common.DateAuditing;
+import com.example.projectbase.constant.AuthProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -45,12 +46,22 @@ public class User extends DateAuditing {
   @Column(name = "last_name", nullable = false)
   private String lastName;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   @Enumerated(EnumType.STRING)
   private GenderConstant gender;
 
   @Column(nullable = false)
   private LocalDate dob;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "auth_provider", nullable = true)
+  private AuthProvider provider;          // local, google, facebook
+
+  @Column(name = "provider_id")
+  private String providerId;              // Google/Facebook user ID
+
+  @Column(name = "image_url")
+  private String imageUrl;
 
   @ManyToOne
   @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_USER_ROLE"))

@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 import javax.transaction.Transactional;
 
 @Service
@@ -22,21 +21,26 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService, CustomU
 
   @Override
   @Transactional
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    User user = userRepository.findByUsername(username)
-        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
-            new String[]{username}));
+  public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+    User user = userRepository.findByUsername(usernameOrEmail)
+            .orElseGet(() -> userRepository.findByEmail(usernameOrEmail)
+                    .orElseThrow(() ->
+                            new NotFoundException(
+                                    ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
+                                    new String[]{usernameOrEmail}
+                            )
+                    )
+            );
     return UserPrincipal.create(user);
   }
+
 
   @Override
   @Transactional
   public UserDetails loadUserById(String id) {
     User user = userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
     return UserPrincipal.create(user);
   }
-
-
 
 }
