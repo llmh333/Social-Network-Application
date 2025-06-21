@@ -4,7 +4,7 @@ public class UrlConstant {
 
   public static class Auth {
     private static final String PRE_FIX = "/auth";
-
+    public static final String REGISTER = PRE_FIX + "/register";
     public static final String LOGIN = PRE_FIX + "/login";
     public static final String LOGIN_GOOGLE = PRE_FIX + "/login/google";
     public static final String LOGIN_FACEBOOK = PRE_FIX + "/login/facebook";
