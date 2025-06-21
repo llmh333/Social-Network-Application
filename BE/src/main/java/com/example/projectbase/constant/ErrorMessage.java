@@ -30,4 +30,11 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_USERNAME = "exception.user.not.found.username";
     public static final String ERR_NOT_FOUND_ID = "exception.user.not.found.id";
   }
+
+  public static class Post {
+    public static final String ERR_NOT_FOUND_ID = "exception.post.not_found_by_id";
+    public static final String ERR_INVALID_DATA = "exception.post.invalid_data";
+    public static final String ERR_SAVE_FAILED = "exception.post.save_failed";
+    public static final String ERR_DELETE_FAILED = "exception.post.delete_failed";
+  }
 }

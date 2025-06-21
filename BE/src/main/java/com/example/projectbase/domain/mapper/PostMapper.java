@@ -12,11 +12,5 @@ import java.time.ZoneOffset;
 @Mapper(componentModel = "spring")
 public interface PostMapper {
 
-    Post toEntity(PostRequestDto dto);
-
-    PostResponseDto toDto(Post entity);
-
-    default Instant map(LocalDateTime dateTime) {
-        return dateTime == null ? null : dateTime.atZone(ZoneOffset.UTC).toInstant();
-    }
+    PostResponseDto toPostResponseDto(Post post);
 }
