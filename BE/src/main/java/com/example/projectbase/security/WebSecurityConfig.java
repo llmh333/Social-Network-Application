@@ -54,11 +54,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and().csrf().disable()
                 .authorizeRequests()
                 .antMatchers(
+                        "/api/v1/auth/login/**",
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                        "/api/v1/auth/**",
                         "/oauth2/**",
                         "/login/oauth2/**",
-                        "/login/**",
+//                        "/login/**",
                         "/login/oauth2/code/*"
                 ).permitAll()
                 .anyRequest().authenticated()
@@ -66,7 +66,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .oauth2Login()
                 .redirectionEndpoint(redir -> redir
-                        .baseUri("/login/oauth2/code/*"))
+                        .baseUri("/login/oauth2/code/{registrationId}"))
                 .successHandler(oAuth2LoginSuccessHandler)
                 .failureHandler(oAuth2LoginFailureHandler);
 

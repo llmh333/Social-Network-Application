@@ -9,8 +9,18 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
+import com.example.projectbase.constant.UrlConstant;
+import com.example.projectbase.security.UserPrincipal;
+import com.example.projectbase.security.jwt.JwtTokenProvider;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import com.example.projectbase.service.impl.OAuthServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -21,10 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -43,36 +49,27 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             throws IOException, ServletException {
 
         OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
-        UserPrincipal principal = oAuthService.processOAuthPostLogin(authToken);
 
-        String accessToken = jwtTokenProvider.generateToken(principal, false);
+        UserPrincipal userPrincipal = oAuthService.processOAuthPostLogin(authToken);
 
-        OAuth2AuthorizedClient client = authorizedClientService
-                .loadAuthorizedClient(
-                        authToken.getAuthorizedClientRegistrationId(),
-                        authToken.getName()
-                );
+        String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+        String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
-        String refreshToken = null;
-        if (client != null && client.getRefreshToken() != null) {
-            refreshToken = client.getRefreshToken().getTokenValue();
-        }
+        Cookie accessCookie = new Cookie("accessToken", accessToken);
+        accessCookie.setHttpOnly(false);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(60*60);
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("accessToken", accessToken);
-        if (refreshToken != null) {
-            payload.put("refreshToken", refreshToken);
-        }
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(false);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(1440*60);
 
-        response.setStatus(HttpStatus.OK.value());
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+
         response.setContentType("application/json;charset=UTF-8");
-        RestData<Map<String,Object>> rest = new RestData<>(payload);
-        objectMapper.writeValue(response.getWriter(), rest);
-        response.getWriter().flush();
 
-        // Điều hướng
-//         String redirectUrl = "http://localhost:3000/oauth-success?token="
-//              + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
-//         response.sendRedirect(redirectUrl);
+        response.sendRedirect("/api/v1"+UrlConstant.OAUTH2_INFO.OAUTH2_TOKEN_INFO);
     }
 }
