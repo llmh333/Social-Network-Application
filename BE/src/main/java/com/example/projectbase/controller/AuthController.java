@@ -5,7 +5,9 @@ import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
+import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
+import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +44,13 @@ public class AuthController {
 
   private final AuthService authService;
 
+  @Operation(summary = "API Đăng ký tài khoản")
+  @PostMapping(UrlConstant.Auth.REGISTER)
+  public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto req) {
+    LoginResponseDto tokens = authService.register(req);
+    return VsResponseUtil.success(HttpStatus.CREATED, tokens);
+  }
+
   @Operation(
           summary = "Đăng nhập bằng username & password",
           description = "Truyền vào username và password hợp lệ để nhận access token & refresh token"
@@ -53,6 +62,11 @@ public class AuthController {
   @PostMapping(UrlConstant.Auth.LOGIN)
   public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
     return VsResponseUtil.success(authService.login(request));
+  }
+
+  @GetMapping(UrlConstant.Auth.OAUTH2_LOGIN + "/google")
+  public void googleLoginRedirect(HttpServletResponse res) throws IOException {
+    res.sendRedirect("/oauth2/authorization/google");
   }
 
   @Operation(summary = "API test")

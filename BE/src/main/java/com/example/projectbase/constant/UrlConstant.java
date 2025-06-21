@@ -4,7 +4,7 @@ public class UrlConstant {
 
   public static class Auth {
     private static final String PRE_FIX = "/auth";
-
+    public static final String REGISTER = PRE_FIX + "/register";
     public static final String LOGIN = PRE_FIX + "/login";
     public static final String LOGIN_GOOGLE = PRE_FIX + "/login/google";
     public static final String LOGIN_FACEBOOK = PRE_FIX + "/login/facebook";
@@ -33,5 +33,17 @@ public class UrlConstant {
     public static final String GET_CURRENT_USER = PRE_FIX + "/current";
     private User() {
     }
+  }
+
+  public static class Post {
+    private static final String PRE_FIX = "/posts";
+
+    public static final String CREATE_POST   = PRE_FIX;
+    public static final String GET_POSTS     = PRE_FIX;
+    public static final String GET_POST      = PRE_FIX + "/{id}";
+    public static final String UPDATE_POST   = PRE_FIX + "/{id}";
+    public static final String DELETE_POST   = PRE_FIX + "/{id}";
+
+    private Post() {}
   }
 }
