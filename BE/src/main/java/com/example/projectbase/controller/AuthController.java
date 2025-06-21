@@ -5,9 +5,11 @@ import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
+import com.example.projectbase.domain.dto.request.UserCreateDto;
+import com.example.projectbase.domain.dto.response.LoginResponseDto;
+import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
-import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +28,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -74,6 +75,13 @@ public class AuthController {
   public String login(@ValidFileImage MultipartFile multipartFile) {
     return multipartFile.getContentType();
   }
+
+
+  @Operation(summary = "API signup")
+  @PostMapping("/signup")
+  public ResponseEntity<SignUpResponseDto> signUp(@Valid @RequestBody UserCreateDto request) {
+    SignUpResponseDto response = authService.signUp(request);
+    return ResponseEntity.ok(response);
 
   @Operation(
           summary = "API Logout",
@@ -146,5 +154,6 @@ public class AuthController {
   public void redirectToFacebook(HttpServletResponse response) throws IOException {
     response.setStatus(HttpStatus.FOUND.value());
     response.sendRedirect(UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_FACEBOOK);
+
   }
 }
