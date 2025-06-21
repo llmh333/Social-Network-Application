@@ -5,8 +5,10 @@ import com.example.projectbase.constant.RoleConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
+import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
+import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.exception.UnauthorizedException;
@@ -16,6 +18,8 @@ import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,8 +33,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -83,6 +88,11 @@ public class AuthServiceImpl implements AuthService {
     throw ex;
   }
   }
+
+  private final UserRepository userRepository;
+
+  @Autowired
+  private PasswordEncoder passwordEncoder;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -138,4 +148,29 @@ public class AuthServiceImpl implements AuthService {
     SecurityContextHolder.clearContext();
     return new CommonResponseDto(true, "Logged out successfully");
   }
+
+@Override
+public SignUpResponseDto signUp(UserCreateDto request) {
+
+  Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+  if (existingUser.isPresent()) {
+    return new SignUpResponseDto("User already exists", false);
+  }
+
+  User user = new User();
+  user.setUsername(request.getUsername());
+  user.setFirstName(request.getFirstName());
+  user.setLastName(request.getLastName());
+
+  String hashedPassword = passwordEncoder.encode(request.getPassword());
+  user.setPassword(hashedPassword);
+
+  user.setCreatedAt(LocalDateTime.now());
+  user.setLastModifiedAt(LocalDateTime.now());
+
+  userRepository.save(user);
+  return new SignUpResponseDto("User successfully registered", true);
+}
+
+}
 }

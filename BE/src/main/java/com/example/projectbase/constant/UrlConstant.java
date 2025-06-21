@@ -9,6 +9,7 @@ public class UrlConstant {
     public static final String LOGIN_GOOGLE = PRE_FIX + "/login/google";
     public static final String LOGIN_FACEBOOK = PRE_FIX + "/login/facebook";
     public static final String LOGOUT = PRE_FIX + "/logout";
+    public static final String SIGNUP = PRE_FIX +"/signup";
     public static final String REFRESH_TOKEN = PRE_FIX + "/refresh-token";
     public static final String ME = PRE_FIX + "/me";
     public static final String UPLOAD_PROFILE_PICTURE = PRE_FIX + "/upload-profile-picture";
@@ -31,6 +32,11 @@ public class UrlConstant {
     public static final String GET_USERS = PRE_FIX;
     public static final String GET_USER = PRE_FIX + "/{userId}";
     public static final String GET_CURRENT_USER = PRE_FIX + "/current";
+    public static final String CREATE_USER = PRE_FIX + "/create";
+    public static final String GET_ALL_USERS = PRE_FIX + "/all";
+    public static final String UPDATE_USERNAME = PRE_FIX + "/update/{id}";
+    public static final String DELETE_USER= PRE_FIX + "/delete/{id}";
+    
     private User() {
     }
   }

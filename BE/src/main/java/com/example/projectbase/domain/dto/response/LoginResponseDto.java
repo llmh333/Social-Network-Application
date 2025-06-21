@@ -30,4 +30,5 @@ public class LoginResponseDto {
     this.authorities = authorities;
   }
 
+
 }
