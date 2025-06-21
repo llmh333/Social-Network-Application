@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.LocalDate;
+
 @ConfigurationProperties("admin")
 @Getter
 @Setter
@@ -13,5 +15,8 @@ public class AdminInfoProperties {
   private String password;
   private String lastName;
   private String firstName;
+  private String email;
+  private LocalDate dob;
+  private String gender;
 
 }
