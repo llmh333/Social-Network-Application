@@ -65,7 +65,6 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public LoginResponseDto signUp(String username, String password) {
-//
 //        LoginResponseDto validation = validateEmailAndPassword(email, password);
 //        if (!validation.isSuccessful()) {
 //            return validation;

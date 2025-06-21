@@ -61,9 +61,8 @@ public class UserController {
   @Tag(name ="user-controller-admin")
   @Operation(summary =" API get all users")
   @GetMapping(UrlConstant.User.GET_ALL_USERS)
-  public ResponseEntity<List<UserDto>> getAllUsers() {
-    List<UserDto> users = userService.getAllUsers();
-    return ResponseEntity.ok(users);
+  public ResponseEntity<?> getAllUsers(@Valid @ParameterObject PaginationFullRequestDto requestDTO) {
+      return VsResponseUtil.success(userService.getAllUsers(requestDTO));
   }
 
   @Tag(name = "user-controller-admin")

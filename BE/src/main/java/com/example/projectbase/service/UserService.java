@@ -20,7 +20,7 @@ public interface UserService {
 
   UserDto createUser(UserCreateDto dto);
 
-  List<UserDto> getAllUsers();
+  PaginationResponseDto<UserDto> getAllUsers(PaginationFullRequestDto request);
 
   UserDto updateUserName(String id, UserUpdateDto dto);
 

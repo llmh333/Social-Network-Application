@@ -4,6 +4,7 @@ import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
+import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
 import com.example.projectbase.domain.dto.response.UserDto;
@@ -18,8 +19,10 @@ import com.example.projectbase.service.UserService;
 import com.example.projectbase.util.PaginationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -68,11 +71,38 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<UserDto> getAllUsers() {
-    List<User> users = userRepository.findAll();
-    return users.stream()
+  public PaginationResponseDto<UserDto> getAllUsers(PaginationFullRequestDto request) {
+    Pageable pageable = PaginationUtil.buildPageable(request, SortByDataConstant.USER);
+
+    Page<User> pageUser = userRepository.findAll(pageable);
+
+    List<UserDto> userDtos = pageUser.getContent().stream()
             .map(userMapper::toUserDto)
             .collect(Collectors.toList());
+
+    String sortBy = "";
+    String sortType = "";
+
+    if (pageUser.getSort().isSorted()) {
+      Sort.Order order = pageUser.getSort().iterator().next();
+      sortBy = order.getProperty();
+      sortType = order.getDirection().name().toLowerCase();
+    } else {
+      sortBy = "id";
+      sortType = "asc";
+    }
+
+    PagingMeta meta = new PagingMeta(
+            pageUser.getTotalElements(),
+            pageUser.getTotalPages(),
+            pageUser.getNumber(),
+            pageUser.getSize(),
+            sortBy,
+            sortType
+    );
+
+    return new PaginationResponseDto<>(meta, userDtos);
+
   }
 
   @Override
@@ -93,32 +123,6 @@ public class UserServiceImpl implements UserService {
     userRepository.delete(user);
   }
 
-
-
-//  private LoginResponseDto validateEmailAndPassword(String email, String password) {
-//    // Email regex pattern
-//    String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
-//    Pattern emailPattern = Pattern.compile(emailRegex);
-//
-//    // Password regex pattern
-//    // The following regex ensures that the password is at least 8 characters long,
-//    // contains at least one digit, one lower case letter, one upper case letter,
-//    // and one special character.
-//    String passwordRegex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
-//    Pattern passwordPattern = Pattern.compile(passwordRegex);
-//
-//    if (!emailPattern.matcher(email).matches()) {
-//      return new LoginResponseDto("Invalid email format", false);
-//    }
-//
-//    if (!passwordPattern.matcher(password).matches()) {
-//      return new LoginResponseDto("Password must be at least 8 characters long, "
-//              + "contain at least one digit, one lower case letter, "
-//              + "one upper case letter, and one special character", false);
-//    }
-//
-//    return new LoginResponseDto("Validation successful", true);
-//  }
 
 
 
