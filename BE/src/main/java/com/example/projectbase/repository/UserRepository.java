@@ -3,14 +3,10 @@ package com.example.projectbase.repository;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.exception.NotFoundException;
-
 import com.example.projectbase.security.UserPrincipal;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
 import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
 
 @Repository
@@ -24,9 +20,14 @@ public interface UserRepository extends JpaRepository<User, String> {
 
   Optional<User> findByEmail(String email);
 
+  boolean existsByUsername(String username);
+
+  boolean existsByEmail(String email);
+
   default User getUser(UserPrincipal currentUser) {
     return findByUsername(currentUser.getUsername())
-        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
-            new String[]{currentUser.getUsername()}));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
+                    new String[]{currentUser.getUsername()}));
   }
+
 }
