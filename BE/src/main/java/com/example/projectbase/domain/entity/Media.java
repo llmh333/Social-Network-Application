@@ -19,6 +19,13 @@ public class Media extends DateAuditing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String title;
+
+    private String category;
+
+    @Column(name = "singer_name")
+    private String singerName;
+
     @Column(name = "public_id", nullable = false)
     private String publicId;
 
@@ -40,4 +47,20 @@ public class Media extends DateAuditing {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
+
+    @PrePersist
+    @PreUpdate
+    private void validateMediaConstraints() {
+        if (resourceType.equals("audio")) {
+            if (category== null || category.trim().isEmpty()) {
+                throw new IllegalArgumentException("Category is required for audio media");
+            }
+            if (title == null || title.trim().isEmpty()) {
+                throw new IllegalArgumentException("Title is required for audio media");
+            }
+            if (singerName == null || singerName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Singer name is required for audio media");
+            }
+        }
+    }
 }
