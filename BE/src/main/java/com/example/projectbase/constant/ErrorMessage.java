@@ -31,6 +31,15 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_ID = "exception.user.not.found.id";
   }
 
+  public static class Media {
+    public static final String ERR_NOT_FOUND_MEDIA = "exception.media.not.found";
+    public static final String ERR_INVALID_MEDIA_TYPE = "exception.media.upload.invalid.format";
+    public static final String ERR_MAX_SIZE_UPLOAD_VIDEO = "exception.media.upload.maxsize_video";
+    public static final String ERR_MAX_SIZE_UPLOAD_AUDIO = "exception.media.upload.maxsize_audio";
+    public static final String ERR_MAX_SIZE_UPLOAD_IMAGE = "exception.media.upload.maxsize_image";
+    public static final String ERR_MAX_SIZE_REQUEST_MEDIA = "exception.media.upload.maxsize_media";
+  }
+
   public static class Post {
     public static final String ERR_NOT_FOUND_ID = "exception.post.not_found_by_id";
     public static final String ERR_INVALID_DATA = "exception.post.invalid_data";

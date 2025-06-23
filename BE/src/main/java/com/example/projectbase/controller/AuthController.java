@@ -6,6 +6,7 @@ import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
+import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
@@ -65,11 +66,6 @@ public class AuthController {
     return VsResponseUtil.success(authService.login(request));
   }
 
-  @GetMapping(UrlConstant.Auth.OAUTH2_LOGIN + "/google")
-  public void googleLoginRedirect(HttpServletResponse res) throws IOException {
-    res.sendRedirect("/oauth2/authorization/google");
-  }
-
   @Operation(summary = "API test")
   @PostMapping("auth/test")
   public String login(@ValidFileImage MultipartFile multipartFile) {
@@ -82,6 +78,7 @@ public class AuthController {
   public ResponseEntity<SignUpResponseDto> signUp(@Valid @RequestBody UserCreateDto request) {
     SignUpResponseDto response = authService.signUp(request);
     return ResponseEntity.ok(response);
+  }
 
   @Operation(
           summary = "API Logout",
@@ -141,9 +138,8 @@ public class AuthController {
           description = "Lấy redirect url chuyển sang trang đăng nhập google"
   )
   @GetMapping(UrlConstant.Auth.LOGIN_GOOGLE)
-  public void redirectToGoogle(HttpServletResponse response) throws IOException {
-    response.setStatus(HttpStatus.FOUND.value());
-    response.sendRedirect(UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_GOOGLE);
+  public ResponseEntity<?> getRedirectToGoogle() throws IOException {
+    return VsResponseUtil.success(HttpStatus.FOUND, UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_GOOGLE);
   }
 
   @Operation(
@@ -154,6 +150,5 @@ public class AuthController {
   public void redirectToFacebook(HttpServletResponse response) throws IOException {
     response.setStatus(HttpStatus.FOUND.value());
     response.sendRedirect(UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_FACEBOOK);
-
   }
 }
