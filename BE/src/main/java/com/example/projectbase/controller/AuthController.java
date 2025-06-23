@@ -6,6 +6,7 @@ import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
+import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
@@ -78,11 +79,11 @@ public class AuthController {
     SignUpResponseDto response = authService.signUp(request);
     return ResponseEntity.ok(response);
   }
+
   @Operation(
           summary = "API Logout",
           description = "Xóa cookie chứa accessToken và refreshToken nếu có"
   )
-
   @PostMapping(UrlConstant.Auth.LOGOUT)
   public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
 
@@ -137,9 +138,8 @@ public class AuthController {
           description = "Lấy redirect url chuyển sang trang đăng nhập google"
   )
   @GetMapping(UrlConstant.Auth.LOGIN_GOOGLE)
-  public void redirectToGoogle(HttpServletResponse response) throws IOException {
-    response.setStatus(HttpStatus.FOUND.value());
-    response.sendRedirect(UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_GOOGLE);
+  public ResponseEntity<?> getRedirectToGoogle() throws IOException {
+    return VsResponseUtil.success(HttpStatus.FOUND, UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_GOOGLE);
   }
 
   @Operation(
@@ -150,7 +150,5 @@ public class AuthController {
   public void redirectToFacebook(HttpServletResponse response) throws IOException {
     response.setStatus(HttpStatus.FOUND.value());
     response.sendRedirect(UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_FACEBOOK);
-
   }
 }
-

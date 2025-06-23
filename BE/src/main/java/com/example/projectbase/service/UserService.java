@@ -14,8 +14,6 @@ public interface UserService {
 
   UserDto getUserById(String userId);
 
-  PaginationResponseDto<UserDto> getCustomers(PaginationFullRequestDto request);
-
   UserDto getCurrentUser(UserPrincipal principal);
 
   UserDto createUser(UserCreateDto dto);

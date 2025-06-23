@@ -44,13 +44,6 @@ public class UserController {
     return VsResponseUtil.success(userService.getCurrentUser(principal));
   }
 
-  @Tag(name = "user-controller-admin")
-  @Operation(summary = "API get all customer")
-  @GetMapping(UrlConstant.User.GET_USERS)
-  public ResponseEntity<?> getCustomers(@Valid @ParameterObject PaginationFullRequestDto requestDTO) {
-    return VsResponseUtil.success(userService.getCustomers(requestDTO));
-  }
-
   @Tag(name ="user-controller-admin")
   @Operation(summary =" API create user")
   @PostMapping(UrlConstant.User.CREATE_USER)
