@@ -42,6 +42,7 @@ import java.util.Optional;
 public class AuthServiceImpl implements AuthService {
 
   private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
+
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
   private final AuthenticationManager authenticationManager;
@@ -54,10 +55,10 @@ public class AuthServiceImpl implements AuthService {
   public LoginResponseDto register(RegisterRequestDto req) {
     try {
       if (userRepository.existsByUsername(req.getUsername())) {
-          throw new RuntimeException("Username đã tồn tại");
+        throw new RuntimeException("Username đã tồn tại");
       }
       if (userRepository.existsByEmail(req.getEmail())) {
-          throw new RuntimeException("Email đã được đăng ký");
+        throw new RuntimeException("Email đã được đăng ký");
       }
 
       User user = new User();
@@ -68,12 +69,12 @@ public class AuthServiceImpl implements AuthService {
       user.setLastName(req.getLastName());
       user.setDob(req.getDob());
       user.setGender(req.getGender());
-      user.setRole( roleRepository.findByName(RoleConstant.USER)
+      user.setRole(roleRepository.findByName(RoleConstant.USER)
               .orElseThrow(() -> new RuntimeException("ROLE_USER not found"))
       );
       userRepository.save(user);
-      UserPrincipal principal = UserPrincipal.create(user);
 
+      UserPrincipal principal = UserPrincipal.create(user);
       String accessToken = jwtTokenProvider.generateToken(principal, false);
       String refreshToken = jwtTokenProvider.generateToken(principal, true);
 
@@ -83,36 +84,39 @@ public class AuthServiceImpl implements AuthService {
               principal.getId(),
               principal.getAuthorities()
       );
-  } catch (Exception ex) {
-    logger.error("Register failed", ex);
-    throw ex;
+    } catch (Exception ex) {
+      logger.error("Register failed", ex);
+      throw ex;
+    }
   }
-  }
-
-  private final UserRepository userRepository;
-
-  @Autowired
-  private PasswordEncoder passwordEncoder;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
     try {
       Authentication authentication = authenticationManager.authenticate(
-              new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword()));
+              new UsernamePasswordAuthenticationToken(
+                      request.getUsernameOrEmail(),
+                      request.getPassword()
+              )
+      );
       SecurityContextHolder.getContext().setAuthentication(authentication);
 
       UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, false);
       String refreshToken = jwtTokenProvider.generateToken(userPrincipal, true);
 
-      return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
+      return new LoginResponseDto(
+              accessToken,
+              refreshToken,
+              userPrincipal.getId(),
+              authentication.getAuthorities()
+      );
     } catch (InternalAuthenticationServiceException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME);
     } catch (BadCredentialsException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_PASSWORD);
     }
   }
-
 
   @Override
   public TokenRefreshResponseDto refresh(TokenRefreshRequestDto request) {
@@ -149,28 +153,22 @@ public class AuthServiceImpl implements AuthService {
     return new CommonResponseDto(true, "Logged out successfully");
   }
 
-@Override
-public SignUpResponseDto signUp(UserCreateDto request) {
+  @Override
+  public SignUpResponseDto signUp(UserCreateDto request) {
+    Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+    if (existingUser.isPresent()) {
+      return new SignUpResponseDto("User already exists", false);
+    }
 
-  Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
-  if (existingUser.isPresent()) {
-    return new SignUpResponseDto("User already exists", false);
+    User user = new User();
+    user.setUsername(request.getUsername());
+    user.setFirstName(request.getFirstName());
+    user.setLastName(request.getLastName());
+    user.setPassword(passwordEncoder.encode(request.getPassword()));
+    user.setCreatedAt(LocalDateTime.now());
+    user.setLastModifiedAt(LocalDateTime.now());
+
+    userRepository.save(user);
+    return new SignUpResponseDto("User successfully registered", true);
   }
-
-  User user = new User();
-  user.setUsername(request.getUsername());
-  user.setFirstName(request.getFirstName());
-  user.setLastName(request.getLastName());
-
-  String hashedPassword = passwordEncoder.encode(request.getPassword());
-  user.setPassword(hashedPassword);
-
-  user.setCreatedAt(LocalDateTime.now());
-  user.setLastModifiedAt(LocalDateTime.now());
-
-  userRepository.save(user);
-  return new SignUpResponseDto("User successfully registered", true);
-}
-
-}
 }

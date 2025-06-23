@@ -65,11 +65,6 @@ public class AuthController {
     return VsResponseUtil.success(authService.login(request));
   }
 
-  @GetMapping(UrlConstant.Auth.OAUTH2_LOGIN + "/google")
-  public void googleLoginRedirect(HttpServletResponse res) throws IOException {
-    res.sendRedirect("/oauth2/authorization/google");
-  }
-
   @Operation(summary = "API test")
   @PostMapping("auth/test")
   public String login(@ValidFileImage MultipartFile multipartFile) {
@@ -82,11 +77,12 @@ public class AuthController {
   public ResponseEntity<SignUpResponseDto> signUp(@Valid @RequestBody UserCreateDto request) {
     SignUpResponseDto response = authService.signUp(request);
     return ResponseEntity.ok(response);
-
+  }
   @Operation(
           summary = "API Logout",
           description = "Xóa cookie chứa accessToken và refreshToken nếu có"
   )
+
   @PostMapping(UrlConstant.Auth.LOGOUT)
   public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
 
@@ -157,3 +153,4 @@ public class AuthController {
 
   }
 }
+

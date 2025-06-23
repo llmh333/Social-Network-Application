@@ -1,159 +1,145 @@
 package com.example.projectbase.service.impl;
 
-import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
-import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.entity.Post;
-import com.example.projectbase.domain.entity.User;
+import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.mapper.PostMapper;
-import com.example.projectbase.exception.InvalidException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.PostRepository;
-import com.example.projectbase.repository.UserRepository;
-import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.PostService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
+@RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
-    private final PostRepository postRepository;
-    private final MediaService mediaService;
-    private final PostMapper postMapper;
-    private final UserRepository userRepository;
+    @Autowired private PostRepository postRepository;
+    @Autowired private MediaService mediaService;
+    @Autowired private PostMapper postMapper;
 
     @Override
-    public PostResponseDto createPost(PostRequestDto dto, List<MultipartFile> files) {
-        User user = getCurrentUser();
-
+    public PostResponseDto createPost(PostRequestDto dto) {
         Post post = Post.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
-                .createdBy(user.getUsername())
-                .user(user)
                 .build();
-
-        if (files != null && !files.isEmpty()) {
-            post.setMediaList(processUploads(post, files));
-        }
-
-        Post saved = postRepository.save(post);
-        return postMapper.toPostResponseDto(saved);
+        post = postRepository.save(post);
+        return postMapper.toDto(post);
     }
 
     @Override
-    public List<PostResponseDto> getAllPosts() {
-        return postRepository.findAll().stream()
-                .map(postMapper::toPostResponseDto)
+    public MediaResponseDto postImage(Long postId, MultipartFile file) {
+        Post post = findPostOrThrow(postId);
+        MediaResponseDto mediaDto = mediaService.uploadImage(file);
+        Media m = buildMediaEntity(mediaDto);
+        m.setPost(post);
+        post.getMediaList().add(m);
+        postRepository.save(post);
+        return mediaDto;
+    }
+
+    @Override
+    public MediaResponseDto postVideo(Long postId, MultipartFile file) {
+        Post post = findPostOrThrow(postId);
+        File conv = convert(file);
+        MediaResponseDto mediaDto = mediaService.uploadVideo(file, conv);
+        Media m = buildMediaEntity(mediaDto);
+        m.setPost(post);
+        post.getMediaList().add(m);
+        postRepository.save(post);
+        return mediaDto;
+    }
+
+    @Override
+    public MediaResponseDto postAudio(Long postId, MultipartFile file, String title, String category, String singerName) {
+        Post post = findPostOrThrow(postId);
+        File conv = convert(file);
+        MediaResponseDto mediaDto = mediaService.uploadAudio(file, conv, title, category, singerName);
+        Media m = buildMediaEntity(mediaDto);
+        m.setPost(post);
+        post.getMediaList().add(m);
+        postRepository.save(post);
+        return mediaDto;
+    }
+
+    @Override
+    public List<MediaResponseDto> postMultiImage(Long postId, List<MultipartFile> files) {
+        Post post = findPostOrThrow(postId);
+        List<MediaResponseDto> dtos = mediaService.uploadMultiImage(files);
+        List<Media> entities = dtos.stream()
+                .map(this::buildMediaEntity)
+                .peek(m -> m.setPost(post))
                 .collect(Collectors.toList());
+        post.getMediaList().addAll(entities);
+        postRepository.save(post);
+        return dtos;
     }
 
     @Override
-    public PostResponseDto getPostById(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID));
-        return postMapper.toPostResponseDto(post);
-    }
-
-    @Override
-    public PostResponseDto updatePost(Long id, PostRequestDto dto, List<MultipartFile> files) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID));
-
+    public PostResponseDto updatePost(Long postId, PostRequestDto dto) {
+        Post post = findPostOrThrow(postId);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
-
-        if (files != null && !files.isEmpty()) {
-            List<String> oldIds = post.getMediaList().stream()
-                    .map(Media::getPublicId)
-                    .collect(Collectors.toList());
-            mediaService.deleteMedia(oldIds);
-
-            post.getMediaList().clear();
-            post.setMediaList(processUploads(post, post.getMediaList(), files));
-        }
-
-        Post updated = postRepository.save(post);
-        return postMapper.toPostResponseDto(updated);
+        return postMapper.toDto(postRepository.save(post));
     }
 
     @Override
-    public void deletePost(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID));
-
-        List<String> publicIds = post.getMediaList().stream()
-                .map(Media::getPublicId)
-                .collect(Collectors.toList());
-        mediaService.deleteMedia(publicIds);
-        postRepository.delete(post);
-    }
-
-    private User getCurrentUser() {
-        UserPrincipal principal = (UserPrincipal) SecurityContextHolder
-                .getContext().getAuthentication().getPrincipal();
-        return userRepository.findById(principal.getId())
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-    }
-
-    private List<Media> processUploads(Post post, List<MultipartFile> files) {
-        return files.stream()
-                .map(file -> {
-                    MediaResponseDto resp;
-                    String type = Objects.requireNonNull(file.getContentType());
-                    if (type.startsWith("image")) {
-                        resp = mediaService.uploadImage(file);
-                    } else if (type.startsWith("video")) {
-                        File tmp = convertToTempFile(file);
-                        resp = mediaService.uploadVideo(file, tmp);
-                    } else if (type.startsWith("audio")) {
-                        resp = mediaService.uploadAudio(file);
-                    } else {
-                        throw new InvalidException(ErrorMessage.Media.ERR_INVALID_MEDIA_TYPE);
-                    }
-
-                    Media m = Media.builder()
-                            .publicId(resp.getPublicId())
-                            .secureUrl(resp.getSecureUrl())
-                            .resourceType(resp.getResourceType())
-                            .thumbnailUrl(resp.getThumbnailUrl())
-                            .width(resp.getWidth())
-                            .height(resp.getHeight())
-                            .format(resp.getFormat())
-                            .dataSize(resp.getDataSize())
-                            .user(post.getUser())
-                            .post(post)
-                            .build();
-                    return m;
-                })
-                .collect(Collectors.toList());
-    }
-
-    private File convertToTempFile(MultipartFile file) {
-        try {
-            File temp = File.createTempFile("upload-", "-" + file.getOriginalFilename());
-            try (FileOutputStream out = new FileOutputStream(temp)) {
-                out.write(file.getBytes());
-            }
-            return temp;
-        } catch (IOException e) {
-            throw new InvalidException("Không thể chuyển MultipartFile sang File tạm", e);
+    public void deletePost(Long postId) {
+        if (!postRepository.existsById(postId)) {
+            throw new NotFoundException("Post không tồn tại id=" + postId);
         }
+        postRepository.deleteById(postId);
+    }
+
+    @Override
+    public Page<PostResponseDto> getAllPosts(int page, int size) {
+        Pageable p = PageRequest.of(page, size, Sort.by("createdDate").descending());
+        return postRepository.findAll(p).map(postMapper::toDto);
+    }
+
+    @Override
+    public PostResponseDto getPostById(Long postId) {
+        return postMapper.toDto(findPostOrThrow(postId));
+    }
+
+    private Post findPostOrThrow(Long id) {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Post không tồn tại id=" + id));
+    }
+
+    private File convert(MultipartFile file) {
+        try {
+            File conv = File.createTempFile("upload", file.getOriginalFilename());
+            try (FileOutputStream fos = new FileOutputStream(conv)) {
+                fos.write(file.getBytes());
+            }
+            return conv;
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi convert MultipartFile", e);
+        }
+    }
+
+    private Media buildMediaEntity(MediaResponseDto dto) {
+        return Media.builder()
+                .publicId(dto.getPublicId())
+                .url(dto.getUrl())
+                .resourceType(dto.getResourceType())
+                .format(dto.getFormat())
+                .dataSize(dto.getDataSize())
+                .createdAt(dto.getCreatedAt())
+                .build();
     }
 }
