@@ -13,7 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostRequestDto {
-    private Long id;
 
     @NotBlank(message = "title must not be blank")
     private String title;
@@ -21,6 +20,4 @@ public class PostRequestDto {
     @NotBlank(message = "content must not be blank")
     private String content;
 
-    private String category;
-    private String singerName;
 }

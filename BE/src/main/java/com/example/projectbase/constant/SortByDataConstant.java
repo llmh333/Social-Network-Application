@@ -28,6 +28,20 @@ public enum SortByDataConstant implements SortByInterface {
           return "createdAt";
       }
     }
+  },
+
+  POST {
+    @Override
+    public String getSortBy(String sortBy) {
+      switch (sortBy) {
+        case "title":
+          return "title";
+        case "lastModifiedDate":
+          return "lastModifiedAt";
+        default:
+          return "createdAt";
+      }
+    }
   }
 
 }

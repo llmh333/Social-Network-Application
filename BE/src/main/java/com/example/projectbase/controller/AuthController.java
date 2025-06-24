@@ -147,8 +147,7 @@ public class AuthController {
           description = "Lấy redirect url chuyển sang trang đăng nhập facebook"
   )
   @GetMapping(UrlConstant.Auth.LOGIN_FACEBOOK)
-  public void redirectToFacebook(HttpServletResponse response) throws IOException {
-    response.setStatus(HttpStatus.FOUND.value());
-    response.sendRedirect(UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_FACEBOOK);
+  public ResponseEntity<?> getRedirectToFacebook() throws IOException {
+    return VsResponseUtil.success(HttpStatus.FOUND, UrlConstant.OAUTH2_INFO.REDIRECT_OAUTH2_FACEBOOK);
   }
 }

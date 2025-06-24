@@ -59,7 +59,7 @@ public class UrlConstant {
     public static final String CREATE_POST_VIDEO  = PRE_FIX + "/video";
     public static final String CREATE_POST_AUDIO   = PRE_FIX + "/audio";
     public static final String CREATE_POST_MULTI_IMAGES   = PRE_FIX + "/images";
-    public static final String GET_POSTS     = PRE_FIX;
+    public static final String GET_ALL_POST_BY_TITLE    = PRE_FIX + "/search";
     public static final String GET_POST      = PRE_FIX + "/{id}";
     public static final String UPDATE_POST   = PRE_FIX + "/{id}";
     public static final String DELETE_POST   = PRE_FIX + "/{id}";

@@ -1,5 +1,6 @@
 package com.example.projectbase.domain.entity;
 
+import com.cloudinary.utils.StringUtils;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -64,19 +65,4 @@ public class Media extends DateAuditing {
     @JoinColumn(name = "post_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_POT"))
     private Post post;
 
-    @PrePersist
-    @PreUpdate
-    private void validateMediaConstraints() {
-        if (resourceType.equals("audio")) {
-            if (category== null || category.trim().isEmpty()) {
-                throw new IllegalArgumentException("Category is required for audio media");
-            }
-            if (title == null || title.trim().isEmpty()) {
-                throw new IllegalArgumentException("Title is required for audio media");
-            }
-            if (singerName == null || singerName.trim().isEmpty()) {
-                throw new IllegalArgumentException("Singer name is required for audio media");
-            }
-        }
-    }
 }
