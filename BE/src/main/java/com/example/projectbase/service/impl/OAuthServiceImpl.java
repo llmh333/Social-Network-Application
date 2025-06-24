@@ -141,7 +141,6 @@ public class OAuthServiceImpl implements OAuthService {
             return roleRepository.findByName(RoleConstant.USER).get();
         } catch (RuntimeException e) {
             throw new RuntimeException("ROLE_USER not found in DB");
-
         }
     }
 
