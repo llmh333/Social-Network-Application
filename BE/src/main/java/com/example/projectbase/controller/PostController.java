@@ -35,14 +35,14 @@ public class PostController {
     private final PostService postService;
     private final ObjectMapper objectMapper;
 
-    @Operation(summary = "Tạo post kèm 1 ảnh")
-    @PostMapping(path = UrlConstant.Post.CREATE_POST_IMAGE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPostWithImage(
+    @Operation(summary = "Tạo post kèm nhiều ảnh")
+    @PostMapping(path = UrlConstant.Post.CREATE_POST_MULTI_IMAGES, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createPostWithMultiImage(
             @RequestParam("data") String data,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) throws JsonProcessingException {
         PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
-        PostResponseDto result = postService.createPostWithImage(dto, image);
+        PostResponseDto result = postService.createPostWithMultiImage(dto, images);
         return VsResponseUtil.success(HttpStatus.CREATED, result);
     }
 
@@ -83,18 +83,6 @@ public class PostController {
             log.error("Unexpected error creating post with audio", e);
             return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create post with audio");
         }
-    }
-
-
-    @Operation(summary = "Tạo post kèm nhiều ảnh")
-    @PostMapping(path = UrlConstant.Post.CREATE_POST_MULTI_IMAGES, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPostWithMultiImage(
-            @RequestParam("data") String data,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) throws JsonProcessingException {
-        PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
-        PostResponseDto result = postService.createPostWithMultiImage(dto, images);
-        return VsResponseUtil.success(HttpStatus.CREATED, result);
     }
 
     @Operation(summary = "Lấy tất cả bài viết theo từ khóa tiêu đề (có phân trang)")

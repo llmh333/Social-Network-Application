@@ -11,12 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface PostService {
-    PostResponseDto createPostWithImage(PostRequestDto dto, MultipartFile image);
+    PostResponseDto createPostWithMultiImage(PostRequestDto dto, List<MultipartFile> images);
     PostResponseDto createPostWithVideo(PostRequestDto dto, MultipartFile video);
     PostResponseDto createPostWithAudio(PostRequestDto dto,
                                         MultipartFile audio, String audioTitle, String category, String singerName);
-    PostResponseDto createPostWithMultiImage(PostRequestDto dto,
-                                             List<MultipartFile> images);
     PostResponseDto updatePost(Long postId, PostRequestDto dto,
                                MultipartFile image, MultipartFile video, MultipartFile audio,
                                String audioTitle, String category, String singerName,

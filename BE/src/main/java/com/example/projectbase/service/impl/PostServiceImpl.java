@@ -45,11 +45,11 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
 
     @Override
-    public PostResponseDto createPostWithImage(PostRequestDto dto, MultipartFile image) {
-        Post post = postRepository.save(buildPost(dto));
-        if (image != null && !image.isEmpty()) {
-            MediaResponseDto mediaDto = mediaService.uploadImage(image);
-            saveMedia(post, mediaDto);
+    public PostResponseDto createPostWithMultiImage(PostRequestDto dto, List<MultipartFile> images) {
+        final Post post = postRepository.save(buildPost(dto));
+        if (images != null && !images.isEmpty()) {
+            List<MediaResponseDto> dtos = mediaService.uploadMultiImage(images);
+            dtos.forEach(mediaDto -> saveMedia(post, mediaDto));
         }
         return postMapper.toPostResponseDto(post);
     }
@@ -99,16 +99,6 @@ public class PostServiceImpl implements PostService {
                 throw new IllegalArgumentException("Audio title is required when uploading audio");
             }
         }
-    }
-
-    @Override
-    public PostResponseDto createPostWithMultiImage(PostRequestDto dto, List<MultipartFile> images) {
-        final Post post = postRepository.save(buildPost(dto));
-        if (images != null && !images.isEmpty()) {
-            List<MediaResponseDto> dtos = mediaService.uploadMultiImage(images);
-            dtos.forEach(mediaDto -> saveMedia(post, mediaDto));
-        }
-        return postMapper.toPostResponseDto(post);
     }
 
     @Override
