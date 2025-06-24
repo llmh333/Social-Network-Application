@@ -40,4 +40,9 @@ public class Post extends DateAuditing {
     @Column(name = "created_by")
     private String createdBy;
 
+    @PrePersist
+    public void prePersist() {
+        if (reactionCount == null) reactionCount = 0L;
+        if (commentCount == null) commentCount = 0L;
+    }
 }

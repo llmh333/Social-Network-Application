@@ -13,9 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostRequestDto {
+
     @NotBlank(message = "title must not be blank")
     private String title;
 
     @NotBlank(message = "content must not be blank")
     private String content;
+
 }

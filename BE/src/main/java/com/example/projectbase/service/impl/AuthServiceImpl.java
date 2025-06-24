@@ -89,10 +89,6 @@ public class AuthServiceImpl implements AuthService {
   }
   }
 
-  private final UserRepository userRepository;
-
-  @Autowired
-  private PasswordEncoder passwordEncoder;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -172,5 +168,4 @@ public SignUpResponseDto signUp(UserCreateDto request) {
   return new SignUpResponseDto("User successfully registered", true);
 }
 
-}
 }

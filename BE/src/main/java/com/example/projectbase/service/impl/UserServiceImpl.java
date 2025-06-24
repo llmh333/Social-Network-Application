@@ -48,14 +48,6 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public PaginationResponseDto<UserDto> getCustomers(PaginationFullRequestDto request) {
-    //Pagination
-    Pageable pageable = PaginationUtil.buildPageable(request, SortByDataConstant.USER);
-    //Create Output
-    return new PaginationResponseDto<>(null, null);
-  }
-
-  @Override
   public UserDto getCurrentUser(UserPrincipal principal) {
     User user = userRepository.getUser(principal);
     return userMapper.toUserDto(user);

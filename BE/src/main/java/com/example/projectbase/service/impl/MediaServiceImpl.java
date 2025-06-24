@@ -3,6 +3,7 @@ package com.example.projectbase.service.impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
+import com.cloudinary.utils.StringUtils;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.SortByDataConstant;
@@ -230,6 +231,7 @@ public class MediaServiceImpl implements MediaService {
     @Override
     public MediaResponseDto uploadAudio(MultipartFile multipartFile, File file, String title, String category, String singerName) {
         validateFile(multipartFile);
+        validateAudioUpload(title, category, singerName);
         try {
             String publicId = generatePublicIdMedia(multipartFile, "audio");
             Map<String, Object> metaData = ObjectUtils.asMap(
@@ -265,6 +267,18 @@ public class MediaServiceImpl implements MediaService {
             file.delete();
         }
         return null;
+    }
+
+    private void validateAudioUpload(String title, String category, String singerName) {
+        if (StringUtils.isBlank(title)) {
+            throw new IllegalArgumentException("Audio title is required");
+        }
+        if (StringUtils.isBlank(category)) {
+            throw new IllegalArgumentException("Category is required");
+        }
+        if (StringUtils.isBlank(singerName)) {
+            throw new IllegalArgumentException("Singer name is required");
+        }
     }
 
     @Transactional
