@@ -2,20 +2,25 @@ package com.example.projectbase.security;
 
 import com.example.projectbase.domain.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.*;
 
-public class UserPrincipal implements UserDetails {
+public class UserPrincipal implements UserDetails, OAuth2User {
 
     private final String id;
 
     private final String firstName;
 
     private final String lastName;
+
+    @Setter
+    private Map<String, Object> attributes;
 
     @JsonIgnore
     private final String username;
@@ -25,17 +30,22 @@ public class UserPrincipal implements UserDetails {
 
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(String username, String password, Collection<? extends GrantedAuthority> authorities) {
-        this(null, null, null, username, password, authorities);
+    public UserPrincipal(String username, String password, Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
+        this(null, null, null, username, password, authorities, attributes);
+    }
+
+    public UserPrincipal(String username, Collection<? extends GrantedAuthority> authorities) {
+        this(null, null, null, username, "", authorities, new HashMap<>());
     }
 
     public UserPrincipal(String id, String firstName, String lastName, String username, String password,
-                         Collection<? extends GrantedAuthority> authorities) {
+                         Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.password = password;
+        this.attributes = attributes;
 
         if (authorities == null) {
             this.authorities = null;
@@ -52,12 +62,20 @@ public class UserPrincipal implements UserDetails {
             authorities.add(new SimpleGrantedAuthority(user.getRole().getName()));
         }
 
+        Map<String, Object> attributes = new HashMap<>();
+
         return new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(),
-                user.getUsername(), user.getPassword(), authorities);
+                user.getUsername(), user.getPassword(), authorities, attributes);
     }
 
     public static OAuth2User create(User user, Map<String, Object> attributes) {
-        return null;
+        List<GrantedAuthority> authorities = new LinkedList<>();
+        if (user.getRole() == null) {
+            authorities.add(new SimpleGrantedAuthority("USER"));
+        } else {
+            authorities.add(new SimpleGrantedAuthority(user.getRole().getName()));
+        }
+        return new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(), user.getUsername(), user.getPassword(), authorities, attributes);
     }
 
     public String getId() {
@@ -80,6 +98,11 @@ public class UserPrincipal implements UserDetails {
     @Override
     public String getPassword() {
         return password;
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override
@@ -120,6 +143,8 @@ public class UserPrincipal implements UserDetails {
         return Objects.hash(id);
     }
 
-    public void setAttributes(Map<String, Object> attrs) {
+    @Override
+    public String getName() {
+        return username;
     }
 }

@@ -12,6 +12,7 @@ import com.example.projectbase.service.PostService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import java.util.List;
 @RestApiV1
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "API bài viết", description = "data = {'content': 'value',\n 'title': 'value'}")
 public class PostController {
 
     private final PostService postService;

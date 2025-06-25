@@ -19,8 +19,8 @@ public class PostResponseDto {
     private Long reactionCount;
     private Long commentCount;
     private String createdBy;
-    private LocalDateTime createdDate;
-    private LocalDateTime lastModifiedDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime lastModifiedAt;
 }
 
 

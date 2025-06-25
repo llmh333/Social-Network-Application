@@ -56,20 +56,19 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
         Cookie accessCookie = new Cookie("accessToken", accessToken);
-        accessCookie.setHttpOnly(false);
+        accessCookie.setHttpOnly(true);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(60*60);
 
         Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-        refreshCookie.setHttpOnly(false);
+        refreshCookie.setHttpOnly(true);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(1440*60);
 
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
+        response.setContentType("application/json");
+        response.sendRedirect("/api/v1" + UrlConstant.OAUTH2_INFO.OAUTH2_TOKEN_INFO);
 
-        response.setContentType("application/json;charset=UTF-8");
-
-        response.sendRedirect("/api/v1"+UrlConstant.OAUTH2_INFO.OAUTH2_TOKEN_INFO);
     }
 }
