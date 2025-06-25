@@ -1,10 +1,12 @@
 package com.example.projectbase.service.impl;
 
 import com.example.projectbase.constant.AuthProvider;
+import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.GenderConstant;
 import com.example.projectbase.constant.RoleConstant;
 import com.example.projectbase.domain.entity.Role;
 import com.example.projectbase.domain.entity.User;
+import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
@@ -14,11 +16,16 @@ import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -27,13 +34,31 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Log4j2
-public class OAuthServiceImpl implements OAuthService {
+public class OAuthServiceImpl extends DefaultOAuth2UserService implements OAuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuthServiceImpl.class);
     private static final LocalDate DEFAULT_DOB = LocalDate.of(1970, 1, 1);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        OAuth2User oAuth2User = super.loadUser(userRequest);
+
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
+        Map<String, Object> attributes = oAuth2User.getAttributes();
+        log.info("Oauth2 [{}] attributes: {}", registrationId,attributes);
+
+        String email = extractEmail(attributes);
+
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_EMAIL, new String[]{email})
+        );
+
+        return UserPrincipal.create(user, attributes);
+
+    }
 
     @Transactional
     public UserPrincipal processOAuthPostLogin(OAuth2AuthenticationToken authToken) {
