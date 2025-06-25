@@ -4,6 +4,7 @@ import com.example.projectbase.base.RestData;
 import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.ErrorMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-@Slf4j
+@Log4j2
 @RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -83,7 +84,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<RestData<?>> handlerNotFoundException(NotFoundException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message, ex);
+    log.warn(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
@@ -119,6 +120,13 @@ public class GlobalExceptionHandler {
   public ResponseEntity<RestData<?>> handleAccessDeniedException(ForbiddenException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
     log.error(message, ex);
+    return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<RestData<?>> handleConflictException(ConflictException ex) {
+    String message = messageSource.getMessage(ex.getMessage(), ex.getParams() ,LocaleContextHolder.getLocale());
+    log.warn(message);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 

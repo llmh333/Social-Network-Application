@@ -21,7 +21,7 @@ target/
 *.ipr
 
 #Ignore spring boot config
-/src/main/resource/application.properties
+/src/main/resource/application-prod.properties
 
 ### NetBeans ###
 /nbproject/private/
