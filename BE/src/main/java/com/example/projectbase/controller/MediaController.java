@@ -15,10 +15,12 @@ import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.impl.VideoProcessingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -37,13 +39,14 @@ import java.util.concurrent.CompletableFuture;
 @RestApiV1
 @Validated
 @RequiredArgsConstructor
+@Tag(name = "API media", description = "Các API liên quan về upload, get, delete media")
 public class MediaController {
 
     private final MediaService mediaService;
     private final VideoProcessingService videoProcessingService;
 
     @Operation(summary = "API Upload Video")
-    @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO)
+    @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadVideo(@RequestParam("file") MultipartFile multipartFile) throws IOException, InterruptedException {
         if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
             throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
@@ -53,18 +56,8 @@ public class MediaController {
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
-    @Operation(summary = "API Upload Image")
-    @PostMapping(UrlConstant.Media.UPLOAD_MEDIA_IMAGE)
-    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile multipartFile) {
-        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_IMAGE) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
-        }
-        MediaResponseDto responseDto = mediaService.uploadImage(multipartFile);
-        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
-    }
-
     @Operation(summary = "API Upload Audio")
-    @PostMapping(UrlConstant.Media.UPLOAD_MEDIA_AUDIO)
+    @PostMapping(value =UrlConstant.Media.UPLOAD_MEDIA_AUDIO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadAudio(@RequestParam("file") MultipartFile multipartFile,
                                          @Valid @RequestParam("title") String title,
                                          @Valid @RequestParam("category") String category,
@@ -78,7 +71,7 @@ public class MediaController {
     }
 
     @Operation(summary = "API Upload Multi Image")
-    @PostMapping(UrlConstant.Media.UPLOAD_MULTI_MEDIA_IMAGE)
+    @PostMapping(value = UrlConstant.Media.UPLOAD_MULTI_MEDIA_IMAGE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadMultiImage(@RequestParam("file") List<MultipartFile> file) {
         List<MediaResponseDto> mediaResponseDtos = mediaService.uploadMultiImage(file);
         return VsResponseUtil.success(HttpStatus.CREATED, mediaResponseDtos);
@@ -104,7 +97,7 @@ public class MediaController {
     @Operation(summary = "API tìm kiếm nhạc theo title hoặc category")
     @GetMapping(UrlConstant.Media.GET_AUDIO_BY_TITLE_OR_CATEGORY_OR_SINGER)
     public ResponseEntity<?> getAudioByTitleOrCategory(@Valid @ParameterObject PaginationRequestDto paginationRequestDto,
-                                                       @RequestParam String keyword) {
+                                                       @RequestParam("keyword") String keyword) {
         PaginationResponseDto responseDto = mediaService.getAudioByTitleOrCategoryOrSinger(paginationRequestDto, keyword);
         return VsResponseUtil.success(HttpStatus.OK, responseDto);
     }

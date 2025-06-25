@@ -5,6 +5,7 @@ import com.example.projectbase.security.jwt.JwtAuthenticationFilter;
 import com.example.projectbase.security.oauth2.OAuth2LoginFailureHandler;
 import com.example.projectbase.security.oauth2.OAuth2LoginSuccessHandler;
 import com.example.projectbase.service.impl.CustomUserDetailsServiceImpl;
+import com.example.projectbase.service.impl.OAuthServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +16,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -32,6 +32,8 @@ import org.springframework.web.cors.CorsConfiguration;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final CustomUserDetailsServiceImpl customUserDetailsService;
+
+    private final OAuthServiceImpl oAuthService;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -69,7 +71,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .redirectionEndpoint(redir -> redir
                         .baseUri("/login/oauth2/code/{registrationId}"))
                 .successHandler(oAuth2LoginSuccessHandler)
-                .failureHandler(oAuth2LoginFailureHandler);
+                .failureHandler(oAuth2LoginFailureHandler)
+                .userInfoEndpoint().userService(oAuthService);
 
         http.exceptionHandling().authenticationEntryPoint(new JwtAuthenticationEntryPoint());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
