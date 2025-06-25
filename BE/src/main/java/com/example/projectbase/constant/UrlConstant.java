@@ -63,7 +63,15 @@ public class UrlConstant {
     public static final String GET_POST      = PRE_FIX + "/{id}";
     public static final String UPDATE_POST   = PRE_FIX + "/{id}";
     public static final String DELETE_POST   = PRE_FIX + "/{id}";
+    public static final String REACTION_FOR_POST = PRE_FIX + "/{postId}/reaction";
+    public static final String CANCEL_REACTION_OF_POST = PRE_FIX + "/{postId}/reaction";
+    public static final String GET_REACTIONS = PRE_FIX + "/{postId}/reactions";
 
     private Post() {}
+  }
+
+  public static class Reaction {
+
+    private Reaction() {}
   }
 }

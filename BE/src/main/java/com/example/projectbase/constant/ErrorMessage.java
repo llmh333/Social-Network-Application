@@ -42,9 +42,15 @@ public class ErrorMessage {
   }
 
   public static class Post {
-    public static final String ERR_NOT_FOUND_ID = "exception.post.not_found_by_id";
+    public static final String ERR_NOT_FOUND_ID = "exception.post.not.found.id";
     public static final String ERR_INVALID_DATA = "exception.post.invalid_data";
     public static final String ERR_SAVE_FAILED = "exception.post.save_failed";
     public static final String ERR_DELETE_FAILED = "exception.post.delete_failed";
+  }
+
+  public static class Reaction {
+    public static final String ERR_NOT_FOUND_ID = "exception.reaction.not_found";
+    public static final String ERR_DUPLICATE = "exception.reaction.duplicate";
+    public static final String ERR_NOT_FOUND = "exception.reaction.not.found";
   }
 }
