@@ -1,0 +1,157 @@
+package com.example.projectbase.service.impl;
+
+
+import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.domain.dto.pagination.PaginationRequestDto;
+import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
+import com.example.projectbase.domain.dto.pagination.PagingMeta;
+import com.example.projectbase.domain.dto.request.FollowRequestDto;
+import com.example.projectbase.domain.dto.response.FollowResponseDto;
+import com.example.projectbase.domain.dto.response.UserSummaryDto;
+import com.example.projectbase.domain.entity.Follow;
+import com.example.projectbase.domain.entity.User;
+import com.example.projectbase.domain.mapper.FollowMapper;
+import com.example.projectbase.domain.mapper.UserMapper;
+import com.example.projectbase.exception.BadRequestException;
+import com.example.projectbase.exception.ConflictException;
+import com.example.projectbase.exception.NotFoundException;
+import com.example.projectbase.repository.FollowRepository;
+import com.example.projectbase.repository.UserRepository;
+import com.example.projectbase.security.UserPrincipal;
+import com.example.projectbase.service.FollowService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Log4j2
+public class FollowServiceImpl implements FollowService {
+
+    private final FollowRepository followRepository;
+    private final UserRepository userRepository;
+    private final FollowMapper followMapper;
+    private final UserMapper userMapper;
+
+    @Override
+    public FollowResponseDto follow(FollowRequestDto requestDto) {
+        String followingId = requestDto.getFollowingId();
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String followerId = userPrincipal.getId();
+
+
+        if (followerId.equals(followingId)) {
+            throw new BadRequestException(ErrorMessage.Follow.ERR_FOLLOW_YOURSELF);
+        }
+
+        User following = userRepository.findById(followingId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.Follow.ERR_NOT_FOUND_FOLLOWING_USER, new String[]{followingId})
+        );
+
+        User follower = userRepository.findById(followerId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followerId})
+        );
+
+        boolean follow = followRepository.existsByFollowingAndFollower(following, follower);
+        if (follow) {
+            throw new ConflictException(ErrorMessage.Follow.ERR_DUPLICATE);
+        }
+
+        Follow newFollow = new Follow();
+        newFollow.setFollowing(following);
+        newFollow.setFollower(follower);
+        FollowResponseDto responseDto = followMapper.toFollowResponseDto(followRepository.save(newFollow));
+        responseDto.setFollowerId(followerId);
+        responseDto.setFollowingId(following.getId());
+
+        return responseDto;
+}
+
+    @Override
+    public boolean unfollow(FollowRequestDto requestDto) {
+
+        String followingId = requestDto.getFollowingId();
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String followerId = userPrincipal.getId();
+
+        User following = userRepository.findById(followingId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
+        );
+
+        User follower = userRepository.findById(followerId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followerId})
+        );
+
+        Follow follow = followRepository.findByFollowingAndFollower(following, follower);
+        if (follow == null) {
+            throw new BadRequestException(ErrorMessage.Follow.ERR_UNFOLLOWING_USER, new String[]{followingId});
+        }
+        followRepository.delete(follow);
+
+        return true;
+    }
+
+    @Override
+    public PaginationResponseDto<UserSummaryDto> getFollowers(PaginationRequestDto requestDto) {
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String followingId = userPrincipal.getId();
+        User following = userRepository.findById(followingId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
+        );
+
+        int pageSize = requestDto.getPageSize();
+        int pageNum = requestDto.getPageNum();
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<Follow> followers = followRepository.findAllByFollowing(following, pageable);
+
+        List<UserSummaryDto> userSummaries = new ArrayList<>();
+        followers.forEach(follow -> {
+            userSummaries.add(userMapper.toUserSummaryDto(follow.getFollower()));
+        });
+        PagingMeta metadata = PagingMeta.builder()
+                .totalPages(followers.getTotalPages())
+                .totalElements(followers.getTotalElements())
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        return new PaginationResponseDto<>(metadata, userSummaries);
+    }
+
+    @Override
+    public PaginationResponseDto<UserSummaryDto> getFollowings(PaginationRequestDto requestDto) {
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String followingId = userPrincipal.getId();
+        User following = userRepository.findById(followingId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
+        );
+
+        int pageSize = requestDto.getPageSize();
+        int pageNum = requestDto.getPageNum();
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<Follow> followers = followRepository.findAllByFollowing(following, pageable);
+
+        List<UserSummaryDto> userSummaries = new ArrayList<>();
+        followers.forEach(follow -> {
+            userSummaries.add(userMapper.toUserSummaryDto(follow.getFollowing()));
+        });
+        PagingMeta metadata = PagingMeta.builder()
+                .totalPages(followers.getTotalPages())
+                .totalElements(followers.getTotalElements())
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        return new PaginationResponseDto<>(metadata, userSummaries);
+    }
+}

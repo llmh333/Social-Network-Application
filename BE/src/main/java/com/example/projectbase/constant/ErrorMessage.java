@@ -53,4 +53,12 @@ public class ErrorMessage {
     public static final String ERR_DUPLICATE = "exception.reaction.duplicate";
     public static final String ERR_NOT_FOUND = "exception.reaction.not.found";
   }
+
+  public static class Follow {
+    public static final String ERR_NOT_FOUND_ID = "exception.follow.not_found";
+    public static final String ERR_DUPLICATE = "exception.follow.duplicate";
+    public static final String ERR_FOLLOW_YOURSELF = "exception.follow.yourself";
+    public static final String ERR_NOT_FOUND_FOLLOWING_USER = "exception.follow.not.found.following";
+    public static final String ERR_UNFOLLOWING_USER = "exception.follow.not.found.unfollow";
+  }
 }
