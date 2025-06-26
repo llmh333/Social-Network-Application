@@ -74,4 +74,16 @@ public class UrlConstant {
 
     private Reaction() {}
   }
+
+  public static class Follow {
+
+    public static final String PRE_FIX = "/follows";
+    public static final String EXECUTING_FOLLOW = PRE_FIX + "/following" ;
+    public static final String UNFOLLOW = PRE_FIX + "/remove/following";
+    public static final String REMOVE_FOLLOWER = PRE_FIX + "/remove/follower";
+    public static final String GET_FOLLOWINGS = PRE_FIX + "/me/followings";
+    public static final String GET_FOLLOWERS = PRE_FIX + "/me/followers";
+
+    private Follow() {}
+  }
 }

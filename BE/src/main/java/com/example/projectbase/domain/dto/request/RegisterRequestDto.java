@@ -1,4 +1,3 @@
-// BE/src/main/java/com/example/projectbase/domain/dto/request/RegisterRequestDto.java
 package com.example.projectbase.domain.dto.request;
 
 import com.example.projectbase.constant.GenderConstant;
