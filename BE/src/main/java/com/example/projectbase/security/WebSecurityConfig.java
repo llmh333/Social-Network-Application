@@ -4,6 +4,7 @@ import com.example.projectbase.security.jwt.JwtAuthenticationEntryPoint;
 import com.example.projectbase.security.jwt.JwtAuthenticationFilter;
 import com.example.projectbase.security.oauth2.OAuth2LoginFailureHandler;
 import com.example.projectbase.security.oauth2.OAuth2LoginSuccessHandler;
+import com.example.projectbase.service.impl.CustomOidcUserService;
 import com.example.projectbase.service.impl.CustomUserDetailsServiceImpl;
 import com.example.projectbase.service.impl.OAuthServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private final CustomOidcUserService customOidcUserService;
+
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
@@ -61,7 +64,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                         "/oauth2/**",
                         "/login/oauth2/**",
-//                        "/login/**",
                         "/login/oauth2/code/*"
                 ).permitAll()
                 .anyRequest().authenticated()
@@ -72,7 +74,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         .baseUri("/login/oauth2/code/{registrationId}"))
                 .successHandler(oAuth2LoginSuccessHandler)
                 .failureHandler(oAuth2LoginFailureHandler)
-                .userInfoEndpoint().userService(oAuthService);
+                .userInfoEndpoint()
+                    .userService(oAuthService)
+                    .oidcUserService(customOidcUserService);
 
         http.exceptionHandling().authenticationEntryPoint(new JwtAuthenticationEntryPoint());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
