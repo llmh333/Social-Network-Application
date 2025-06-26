@@ -4,7 +4,6 @@ import com.example.projectbase.constant.ErrorMessage;
 import lombok.*;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 
 @Setter
 @Getter

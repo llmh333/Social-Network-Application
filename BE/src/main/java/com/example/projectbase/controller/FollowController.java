@@ -10,6 +10,8 @@ import com.example.projectbase.domain.dto.request.FollowRequestDto;
 import com.example.projectbase.domain.dto.response.FollowResponseDto;
 import com.example.projectbase.domain.dto.response.UserSummaryDto;
 import com.example.projectbase.service.FollowService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springdoc.api.annotations.ParameterObject;
@@ -21,24 +23,33 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @RestApiV1
 @Log4j2
 @RequiredArgsConstructor
+@Tag(name = "Follow", description = "Các chức năng liên quan tới follow")
 public class FollowController {
 
     private final FollowService followService;
 
+    @Operation(summary = "Theo dõi người dùng khác", description = "Truyền vào ID của người muốn theo dõi")
     @PostMapping(value = UrlConstant.Follow.EXECUTING_FOLLOW)
     public ResponseEntity<RestData<?>> follow(@RequestBody @Valid FollowRequestDto requestDto) {
         FollowResponseDto response = followService.follow(requestDto);
         return VsResponseUtil.success(response);
     }
 
+    @Operation(summary = "Unfollow người mình đã follow", description = "followingID -> người được follow")
     @PostMapping(value = UrlConstant.Follow.UNFOLLOW)
-    public ResponseEntity<RestData<?>> unfollow(@RequestBody @Valid FollowRequestDto requestDto) {
-        followService.unfollow(requestDto);
+    public ResponseEntity<RestData<?>> unfollow(@RequestParam String followingId) {
+        followService.unfollow(followingId);
+        return VsResponseUtil.success(HttpStatus.NO_CONTENT);
+    }
+
+    @Operation(summary = "bỏ follow của người đã follow mình", description = "followerID -> Người follow mình")
+    @PostMapping(value = UrlConstant.Follow.REMOVE_FOLLOWER)
+    public ResponseEntity<RestData<?>> removeFollower(@RequestParam String followerId) {
+        followService.removeFollower(followerId);
         return VsResponseUtil.success(HttpStatus.NO_CONTENT);
     }
 

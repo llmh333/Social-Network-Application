@@ -58,7 +58,8 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_ID = "exception.follow.not_found";
     public static final String ERR_DUPLICATE = "exception.follow.duplicate";
     public static final String ERR_FOLLOW_YOURSELF = "exception.follow.yourself";
-    public static final String ERR_NOT_FOUND_FOLLOWING_USER = "exception.follow.not.found.following";
-    public static final String ERR_UNFOLLOWING_USER = "exception.follow.not.found.unfollow";
+    public static final String ERR_NOT_FOUND_FOLLOWING = "exception.follow.not.found.following";
+    public static final String ERR_REMOVE_FOLLOWER = "exception.follower.not.found.follower";
+    public static final String ERR_UNFOLLOW_USER = "exception.follow.not.found.unfollow";
   }
 }

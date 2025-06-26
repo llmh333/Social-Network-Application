@@ -12,7 +12,9 @@ public interface FollowService {
 
     public FollowResponseDto follow(FollowRequestDto requestDto);
 
-    public boolean unfollow(FollowRequestDto requestDto);
+    public boolean unfollow(String followingId);
+
+    public boolean removeFollower(String followerId);
 
     public PaginationResponseDto<UserSummaryDto> getFollowers(PaginationRequestDto requestDto);
 

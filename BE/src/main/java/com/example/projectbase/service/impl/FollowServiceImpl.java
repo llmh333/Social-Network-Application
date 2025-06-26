@@ -28,7 +28,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,18 +49,13 @@ public class FollowServiceImpl implements FollowService {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String followerId = userPrincipal.getId();
 
-
         if (followerId.equals(followingId)) {
             throw new BadRequestException(ErrorMessage.Follow.ERR_FOLLOW_YOURSELF);
         }
 
-        User following = userRepository.findById(followingId).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.Follow.ERR_NOT_FOUND_FOLLOWING_USER, new String[]{followingId})
-        );
-
-        User follower = userRepository.findById(followerId).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followerId})
-        );
+        Map<String, User> relatedUsers = getFollowerAndFollowing(followerId, followingId);
+        User following = relatedUsers.get("following");
+        User follower = relatedUsers.get("follower");
 
         boolean follow = followRepository.existsByFollowingAndFollower(following, follower);
         if (follow) {
@@ -76,26 +73,33 @@ public class FollowServiceImpl implements FollowService {
 }
 
     @Override
-    public boolean unfollow(FollowRequestDto requestDto) {
+    public boolean unfollow(String followingId) {
 
-        String followingId = requestDto.getFollowingId();
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String followerId = userPrincipal.getId();
+        String currentUserId = userPrincipal.getId();
 
-        User following = userRepository.findById(followingId).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
-        );
+        Map<String, User> relatedUsers = getFollowerAndFollowing(currentUserId, followingId);
+        User following = relatedUsers.get("following");
+        User follower = relatedUsers.get("follower");
 
-        User follower = userRepository.findById(followerId).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followerId})
-        );
-
-        Follow follow = followRepository.findByFollowingAndFollower(following, follower);
-        if (follow == null) {
-            throw new BadRequestException(ErrorMessage.Follow.ERR_UNFOLLOWING_USER, new String[]{followingId});
+        if (!isFollowing(following, follower)) {
+            throw new BadRequestException(ErrorMessage.Follow.ERR_UNFOLLOW_USER, new String[]{followingId});
         }
-        followRepository.delete(follow);
+        return true;
+    }
 
+    @Override
+    public boolean removeFollower(String followerId) {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String currentUserId = userPrincipal.getId();
+
+        Map<String, User> relatedUsers = getFollowerAndFollowing(followerId, currentUserId);
+        User following = relatedUsers.get("following");
+        User follower = relatedUsers.get("follower");
+
+        if (!isFollowing(following, follower)) {
+            throw new BadRequestException(ErrorMessage.Follow.ERR_REMOVE_FOLLOWER, new String[]{followerId});
+        }
         return true;
     }
 
@@ -103,16 +107,16 @@ public class FollowServiceImpl implements FollowService {
     public PaginationResponseDto<UserSummaryDto> getFollowers(PaginationRequestDto requestDto) {
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String followingId = userPrincipal.getId();
-        User following = userRepository.findById(followingId).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
+        String currentUserId = userPrincipal.getId();
+        User currentUser = userRepository.findById(currentUserId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{currentUserId})
         );
 
         int pageSize = requestDto.getPageSize();
         int pageNum = requestDto.getPageNum();
 
         Pageable pageable = PageRequest.of(pageNum, pageSize);
-        Page<Follow> followers = followRepository.findAllByFollowing(following, pageable);
+        Page<Follow> followers = followRepository.findAllByFollowing(currentUser, pageable);
 
         List<UserSummaryDto> userSummaries = new ArrayList<>();
         followers.forEach(follow -> {
@@ -131,16 +135,16 @@ public class FollowServiceImpl implements FollowService {
     public PaginationResponseDto<UserSummaryDto> getFollowings(PaginationRequestDto requestDto) {
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String followingId = userPrincipal.getId();
-        User following = userRepository.findById(followingId).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
+        String currentUserId = userPrincipal.getId();
+        User currentUser = userRepository.findById(currentUserId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{currentUserId})
         );
 
         int pageSize = requestDto.getPageSize();
         int pageNum = requestDto.getPageNum();
 
         Pageable pageable = PageRequest.of(pageNum, pageSize);
-        Page<Follow> followers = followRepository.findAllByFollowing(following, pageable);
+        Page<Follow> followers = followRepository.findAllByFollower(currentUser, pageable);
 
         List<UserSummaryDto> userSummaries = new ArrayList<>();
         followers.forEach(follow -> {
@@ -153,5 +157,28 @@ public class FollowServiceImpl implements FollowService {
                 .pageSize(pageSize)
                 .build();
         return new PaginationResponseDto<>(metadata, userSummaries);
+    }
+
+    private Map<String, User> getFollowerAndFollowing(String followerId, String followingId) {
+        User following = userRepository.findById(followingId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})
+        );
+
+        User follower = userRepository.findById(followerId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followerId})
+        );
+        Map<String, User> resultUser = new HashMap<>();
+        resultUser.put("follower", follower);
+        resultUser.put("following", following);
+        return resultUser;
+    }
+
+    private boolean isFollowing(User following, User follower) {
+        Follow follow = followRepository.findByFollowingAndFollower(following, follower);
+        if (follow == null) {
+            return false;
+        }
+        followRepository.delete(follow);
+        return true;
     }
 }
