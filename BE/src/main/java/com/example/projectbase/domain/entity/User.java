@@ -67,10 +67,10 @@ public class User extends DateAuditing {
   @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_USER_ROLE"))
   private Role role;
 
-  @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "following", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Follow> followings = new ArrayList<>();
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Follow> followers = new ArrayList<>();
 
   @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
