@@ -23,9 +23,13 @@ public class Post extends DateAuditing {
 
     @Column(nullable = false)
     private String title;
-
     @Column(nullable = false)
     private String content;
+
+
+    @ManyToOne
+    @JoinColumn(name= "original_post_id")
+    private Post originalPost;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Media> mediaList = new ArrayList<>();
