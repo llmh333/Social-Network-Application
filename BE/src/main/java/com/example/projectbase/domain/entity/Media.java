@@ -1,6 +1,7 @@
 package com.example.projectbase.domain.entity;
 
 import com.cloudinary.utils.StringUtils;
+import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -28,10 +29,10 @@ public class Media extends DateAuditing {
     @Column(name = "singer_name")
     private String singerName;
 
-    @Column(name = "public_id", nullable = false)
+    @Column(name = "public_id")
     private String publicId;
 
-    @Column(name = "secret_url", nullable = false)
+    @Column(name = "secret_url")
     private String secureUrl;
 
     @Column(name = "playback_url")
@@ -43,7 +44,7 @@ public class Media extends DateAuditing {
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
 
-    @Column(name = "format", nullable = false)
+    @Column(name = "format")
     private String format;
 
     @Column(name = "data_size", nullable = false)
@@ -53,9 +54,6 @@ public class Media extends DateAuditing {
 
     private Long width;
 
-    @Column(name = "create_by")
-    private LocalDateTime createdBy;
-
     @ManyToOne
     @JoinColumn(name = "author_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_USER"))
     @JsonIgnore
@@ -64,5 +62,9 @@ public class Media extends DateAuditing {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_POT"))
     private Post post;
+
+    @Column(name = "status_upload")
+    @Enumerated(EnumType.STRING)
+    private UploadStatusConstant status;
 
 }
