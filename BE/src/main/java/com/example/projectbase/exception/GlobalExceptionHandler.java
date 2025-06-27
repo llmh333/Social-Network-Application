@@ -137,10 +137,4 @@ public class GlobalExceptionHandler {
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
-  @ExceptionHandler(MaxUploadSizeMediaException.class)
-  public ResponseEntity<RestData<?>> handleMaxUploadSizeMediaException(MaxUploadSizeMediaException ex) {
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message, ex);
-    return VsResponseUtil.error(ex.getStatus(), message);
-  }
 }

@@ -7,7 +7,6 @@ import com.cloudinary.utils.StringUtils;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.SortByDataConstant;
-import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
@@ -118,91 +117,106 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public MediaResponseDto uploadVideo(MultipartFile multipartFile) throws IOException, InterruptedException {
+    public MediaResponseDto uploadVideo(MultipartFile multipartFile, File file) {
         validateFile(multipartFile);
-        Media videoUpload = mediaPending(multipartFile, "video");
-        MediaResponseDto  mediaResponseDto = new MediaResponseDto();
-        File videoCompress = videoProcessingService.compressVideo(multipartFile);
         try {
+            String publicId = generatePublicIdMedia(multipartFile, "video");
             Map<String, Object> metaData = ObjectUtils.asMap(
                     "resource_type", "video",
                     "quality", "auto",
                     "video_codec", "h264",
                     "chunk_size", 7000000,
                     "eager_async", true,
-                    "public_id", videoUpload.getPublicId(),
+                    "public_id", publicId,
                     "invalidate", true,
                     "eager", Arrays.asList(
                             new Transformation()
                                     .fetchFormat("m3u8"),
                             new Transformation()
                                     .startOffset("auto")
-                                    .width(720)
-                                    .height(1080)
+                                    .width(1080)
+                                    .height(1920)
                                     .crop("fill")
                                     .gravity("center")
                                     .fetchFormat("jpg")
                     )
             );
-            Map<String, Object> result = cloudinary.uploader().uploadLarge(videoCompress, metaData);
-            List<Map<String, Object>> eagerList = (List<Map<String, Object>>) result.get("eager");
-            if (eagerList != null) {
-                for (Map<String, Object> eager : eagerList) {
-                    String url = (String) eager.get("secure_url");
-                    if (url != null && url.endsWith(".jpg")) {
-                        videoUpload.setThumbnailUrl(url);
-                    } else if (url != null && url.endsWith(".m3u8")) {
-                        videoUpload.setPlaybackUrl(url);
+            Map<String, Object> result = cloudinary.uploader().uploadLarge(file, metaData);
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(result);
+            JsonNode jsonNode = mapper.readTree(json);
+            JsonNode eagerNode = jsonNode.get("eager");
+            String thumbnailUrl = null;
+            if (eagerNode != null && eagerNode.isArray()) {
+                for (JsonNode node : eagerNode) {
+                    String url = node.get("url").asText();
+                    System.out.println(url);
+                    if (url.endsWith(".jpg")) {
+                        thumbnailUrl = url;
+                        break;
                     }
                 }
             }
-            videoUpload.setSecureUrl(result.get("secure_url").toString());
-            videoUpload.setHeight(Long.parseLong(result.get("height").toString()));
-            videoUpload.setWidth(Long.parseLong(result.get("width").toString()));
-            videoUpload.setFormat(result.get("format").toString());
-            videoUpload.setStatus(UploadStatusConstant.DONE);
-            mediaResponseDto = mediaMapper.toMediaResponseDto(mediaRepository.save(videoUpload));
-            mediaResponseDto.setAuthorId(videoUpload.getUser().getId());
+            log.info("result: {}", result);
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+            Media media = Media.builder()
+                    .dataSize(Long.valueOf((Integer) result.get("bytes")))
+                    .format(result.get("format").toString())
+                    .user(user)
+                    .publicId(jsonNode.get("public_id").asText())
+                    .secureUrl(jsonNode.get("secure_url").asText())
+                    .resourceType(jsonNode.get("resource_type").asText())
+                    .playbackUrl(jsonNode.get("playback_url").asText())
+                    .width(Long.valueOf((Integer) result.get("width")))
+                    .height(Long.valueOf((Integer) result.get("height")))
+                    .thumbnailUrl(thumbnailUrl)
+                    .build();
+            Media savedMedia = mediaRepository.save(media);
+            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
+            mediaResponseDto.setAuthorId(user.getId());
+            return mediaResponseDto;
         } catch (IOException e) {
-            videoUpload.setStatus(UploadStatusConstant.ERROR);
-            mediaRepository.save(videoUpload);
-            videoCompress.delete();
             e.printStackTrace();
         } finally {
-            videoCompress.delete();
+            file.delete();
         }
-        return mediaResponseDto;
+        return null;
     }
 
     @Override
-    public MediaResponseDto uploadImage(MultipartFile multipartFile) {
-        validateFile(multipartFile);
-        MediaResponseDto mediaResponseDto =new MediaResponseDto();
-        Media imageUpload = mediaPending(multipartFile,"image");
+    public MediaResponseDto uploadImage(MultipartFile file) {
+        validateFile(file);
         try {
+            String publicId = generatePublicIdMedia(file, "image");
             Map<String, Object> metaData = ObjectUtils.asMap(
                     "resource_type", "image",
                     "quality", "auto",
                     "fetch_format", "auto",
-                    "public_id", imageUpload.getPublicId()
+                    "public_id", publicId
             );
-            Map<String, Object> result = cloudinary.uploader().upload(multipartFile.getBytes(), metaData);
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), metaData);
             log.info("result: {}", result);
-            imageUpload.setDataSize(multipartFile.getSize());
-            imageUpload.setFormat(result.get("format").toString());
-            imageUpload.setPublicId(result.get("public_id").toString());
-            imageUpload.setSecureUrl(result.get("secure_url").toString());
-            imageUpload.setResourceType(result.get("resource_type").toString());
-            imageUpload.setWidth(Long.valueOf((Integer) result.get("width")));
-            imageUpload.setHeight(Long.valueOf((Integer) result.get("height")));
-            imageUpload.setStatus(UploadStatusConstant.DONE);
-            Media savedMedia = mediaRepository.save(imageUpload);
-            mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
-            mediaResponseDto.setAuthorId(imageUpload.getUser().getId());
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+            Media media = Media.builder()
+                    .dataSize(file.getSize())
+                    .format(result.get("format").toString())
+                    .user(user)
+                    .publicId(result.get("public_id").toString())
+                    .secureUrl(result.get("secure_url").toString())
+                    .resourceType(result.get("resource_type").toString())
+                    .width(Long.valueOf((Integer) result.get("width")))
+                    .height(Long.valueOf((Integer) result.get("height")))
+                    .build();
+            Media savedMedia = mediaRepository.save(media);
+            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
+            mediaResponseDto.setAuthorId(user.getId());
+            return mediaResponseDto;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return mediaResponseDto;
+        return null;
     }
 
     @Override
@@ -215,39 +229,56 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public MediaResponseDto uploadAudio(MultipartFile multipartFile, String title, String category, String singerName) throws IOException, InterruptedException {
+    public MediaResponseDto uploadAudio(MultipartFile multipartFile, File file, String title, String category, String singerName) {
         validateFile(multipartFile);
-        Media audioUpload = mediaPending(multipartFile,"audio");
-        MediaResponseDto mediaResponseDto =new MediaResponseDto();
-        File audioCompress = videoProcessingService.compressVideo(multipartFile);
+        validateAudioUpload(title, category, singerName);
         try {
+            String publicId = generatePublicIdMedia(multipartFile, "audio");
             Map<String, Object> metaData = ObjectUtils.asMap(
                     "resource_type", "video",
                     "quality", "auto",
                     "chunk_size", 7000000,
                     "eager_async", true,
-                    "public_id", audioUpload.getPublicId(),
+                    "public_id", publicId,
                     "invalidate", true
             );
-            Map<String, Object> result = cloudinary.uploader().uploadLarge(audioCompress, metaData);
+            Map<String, Object> result = cloudinary.uploader().uploadLarge(file, metaData);
             log.info("result: {}", result);
-
-            audioUpload.setDataSize(Long.valueOf((Integer) result.get("bytes")));
-            audioUpload.setFormat(result.get("format").toString());
-            audioUpload.setSecureUrl(result.get("secure_url").toString());
-            audioUpload.setTitle(title);
-            audioUpload.setCategory(category);
-            audioUpload.setSingerName(singerName);
-            audioUpload.setStatus(UploadStatusConstant.DONE);
-            Media savedMedia = mediaRepository.save(audioUpload);
-            mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
-            mediaResponseDto.setAuthorId(savedMedia.getUser().getId());
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+            Media media = Media.builder()
+                    .dataSize(Long.valueOf((Integer) result.get("bytes")))
+                    .format(result.get("format").toString())
+                    .user(user)
+                    .publicId(result.get("public_id").toString())
+                    .secureUrl(result.get("secure_url").toString())
+                    .resourceType("audio")
+                    .title(title)
+                    .category(category)
+                    .singerName(singerName)
+                    .build();
+            Media savedMedia = mediaRepository.save(media);
+            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
+            mediaResponseDto.setAuthorId(user.getId());
+            return mediaResponseDto;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            audioCompress.delete();
+            file.delete();
         }
-        return mediaResponseDto;
+        return null;
+    }
+
+    private void validateAudioUpload(String title, String category, String singerName) {
+        if (StringUtils.isBlank(title)) {
+            throw new IllegalArgumentException("Audio title is required");
+        }
+        if (StringUtils.isBlank(category)) {
+            throw new IllegalArgumentException("Category is required");
+        }
+        if (StringUtils.isBlank(singerName)) {
+            throw new IllegalArgumentException("Singer name is required");
+        }
     }
 
     @Transactional
@@ -307,19 +338,5 @@ public class MediaServiceImpl implements MediaService {
             return "image" + System.currentTimeMillis() + file.getName();
         }
         return "audio" + System.currentTimeMillis() + file.getName();
-    }
-
-    private Media mediaPending(MultipartFile multipartFile, String typeMedia) {
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-        String publicId = generatePublicIdMedia(multipartFile, typeMedia);
-        Media media = Media.builder()
-                .publicId(publicId)
-                .resourceType(typeMedia)
-                .dataSize(multipartFile.getSize())
-                .status(UploadStatusConstant.PROCESSING)
-                .user(user)
-                .build();
-        return mediaRepository.save(media);
     }
 }

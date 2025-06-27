@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -54,7 +53,7 @@ public class PostController {
     public ResponseEntity<?> createPostWithVideo(
             @RequestParam("data") String data,
             @RequestPart(value = "video", required = false) MultipartFile video
-    ) throws IOException, InterruptedException {
+    ) throws JsonProcessingException {
         PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
         PostResponseDto result = postService.createPostWithVideo(dto, video);
         return VsResponseUtil.success(HttpStatus.CREATED, result);
@@ -116,7 +115,7 @@ public class PostController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "singerName", required = false) String singerName,
             @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) throws IOException, InterruptedException {
+    ) throws JsonProcessingException {
         PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
         PostResponseDto updated = postService.updatePost(
                 id, dto, image, video, audio,
@@ -129,6 +128,6 @@ public class PostController {
     @DeleteMapping(path = UrlConstant.Post.DELETE_POST)
     public ResponseEntity<?> deletePost(@PathVariable("id") Long id) {
         postService.deletePost(id);
-        return VsResponseUtil.success(HttpStatus.NO_CONTENT);
+        return VsResponseUtil.success(HttpStatus.NO_CONTENT, null);
     }
 }

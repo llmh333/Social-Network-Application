@@ -7,7 +7,6 @@ import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 public interface MediaService {
@@ -16,9 +15,9 @@ public interface MediaService {
     public MediaResponseDto getMediaByPublicId(String publicId);
     public PaginationResponseDto<MediaResponseDto> getAudioByTitleOrCategoryOrSinger(PaginationRequestDto paginationRequestDto, String keyword);
 
-    public MediaResponseDto uploadVideo(MultipartFile multipartFile) throws IOException, InterruptedException;
-    public MediaResponseDto uploadImage(MultipartFile file) throws IOException, InterruptedException;
-    public MediaResponseDto uploadAudio(MultipartFile multipartFile, String title, String category, String singerName) throws IOException, InterruptedException;
+    public MediaResponseDto uploadVideo(MultipartFile multipartFile, File file);
+    public MediaResponseDto uploadImage(MultipartFile file);
+    public MediaResponseDto uploadAudio(MultipartFile multipartFile, File file, String title, String category, String singerName);
     public List<MediaResponseDto> uploadMultiImage(List<MultipartFile> file);
 
     public boolean deleteMedia(List<String> publicIdList);

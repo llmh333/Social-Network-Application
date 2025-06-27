@@ -9,7 +9,6 @@ import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
-import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.exception.InvalidException;
 import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.repository.MediaRepository;
@@ -34,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -46,15 +44,15 @@ public class MediaController {
 
     private final MediaService mediaService;
     private final VideoProcessingService videoProcessingService;
-    private final MediaRepository mediaRepository;
 
     @Operation(summary = "API Upload Video")
     @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadVideo(@RequestPart("file") MultipartFile multipartFile) throws IOException, InterruptedException {
+    public ResponseEntity<?> uploadVideo(@RequestParam("file") MultipartFile multipartFile) throws IOException, InterruptedException {
         if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
             throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
         }
-        MediaResponseDto responseDto = mediaService.uploadVideo(multipartFile);
+        File largeFile = videoProcessingService.compressVideo(multipartFile);
+        MediaResponseDto responseDto = mediaService.uploadVideo(multipartFile, largeFile);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
@@ -67,7 +65,8 @@ public class MediaController {
         if (multipartFile.getSize() > MediaConstant.MAX_SIZE_AUDIO) {
             throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
         }
-        MediaResponseDto responseDto = mediaService.uploadAudio(multipartFile, title, category, singerName);
+        File largeFile = videoProcessingService.compressAudio(multipartFile);
+        MediaResponseDto responseDto = mediaService.uploadAudio(multipartFile, largeFile, title, category, singerName);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
