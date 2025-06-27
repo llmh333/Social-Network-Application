@@ -47,9 +47,13 @@ public class ReactionServiceImpl implements ReactionService {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-                    Reaction reaction = reactionRepository.findByUser_IdAndPost_Id(userPrincipal.getId(), postId);
+
+        Reaction reaction = reactionRepository.findByUser_IdAndPost_Id(userPrincipal.getId(), postId);
+        boolean isNewReaction = false;
+
         if (reaction == null) {
             reaction = new Reaction();
+            isNewReaction = true;
         }
         String reactionType = request.getReactionType();
         if (reactionType.equals(ReactionTypeConstant.LIKE.name())) {
@@ -68,6 +72,11 @@ public class ReactionServiceImpl implements ReactionService {
         reaction.setPost(post);
         reaction.setUser(user);
         ReactionResponseDto responseDto = reactionMapper.toReactionResponseDto(reactionRepository.save(reaction));
+        if (isNewReaction) {
+            post.setReactionCount(post.getReactionCount() + 1);
+            post.getReactions().add(reaction);
+            postRepository.save(post);
+        }
         responseDto.setPostId(post.getId());
         responseDto.setUserId(user.getId());
         return responseDto;
@@ -77,12 +86,15 @@ public class ReactionServiceImpl implements ReactionService {
     public boolean cancelReaction(Long postId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         long response = reactionRepository.deleteByUserIdAndPostId(userPrincipal.getId(), postId);
 
         System.out.println(response);
         if (response == 0) {
             throw new NotFoundException(ErrorMessage.Reaction.ERR_NOT_FOUND);
         }
+        post.setReactionCount(post.getReactionCount() - 1);
+        postRepository.save(post);
         return true;
     }
 
