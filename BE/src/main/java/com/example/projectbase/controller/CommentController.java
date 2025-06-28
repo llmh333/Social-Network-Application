@@ -1,0 +1,107 @@
+package com.example.projectbase.controller;
+
+import com.example.projectbase.base.RestApiV1;
+import com.example.projectbase.base.VsResponseUtil;
+import com.example.projectbase.constant.UrlConstant;
+import com.example.projectbase.domain.dto.request.CommentRequestDto;
+import com.example.projectbase.domain.dto.request.ReplyRequestDto;
+import com.example.projectbase.domain.dto.response.CommentResponseDto;
+import com.example.projectbase.exception.NotFoundException;
+import com.example.projectbase.service.CommentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.security.Principal;
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
+@RestController
+@RestApiV1
+@RequiredArgsConstructor
+@Validated
+@Tag(name = "Comment", description = "CRUD API cho bình luận và trả lời bình luận")
+public class CommentController {
+
+    private final CommentService commentService;
+
+    @Operation(summary = "Thêm bình luận cho bài viết")
+    @PostMapping(UrlConstant.Comment.ADD_COMMENT)
+    public ResponseEntity<?> addComment(
+            @PathVariable("postId") Long postId,
+            @Valid @RequestBody CommentRequestDto dto,
+            Principal principal) {
+        CommentResponseDto created = commentService.addComment(postId, dto, principal.getName());
+        return VsResponseUtil.success(HttpStatus.CREATED, created);
+    }
+
+    @Operation(summary = "Trả lời bình luận")
+    @PostMapping(UrlConstant.Comment.REPLY_COMMENT)
+    public ResponseEntity<?> replyToComment(
+            @PathVariable("postId") Long postId,
+            @PathVariable("parentCommentId") Long parentId,
+            @Valid @RequestBody ReplyRequestDto dto,
+            Principal principal) {
+        CommentResponseDto reply = commentService.replyToComment(postId, parentId, dto, principal.getName());
+        return VsResponseUtil.success(HttpStatus.CREATED, reply);
+    }
+
+    @Operation(summary = "Lấy bình luận gốc và trả lời theo bài viết (lazy loading, phân trang)")
+    @GetMapping(UrlConstant.Comment.GET_COMMENTS)
+    public ResponseEntity<?> getCommentsByPost(
+            @PathVariable("postId") Long postId,
+            Pageable pageable) {
+        Page<CommentResponseDto> page = commentService.getCommentsByPost(postId, pageable);
+        return VsResponseUtil.success(page);
+    }
+
+    @Operation(summary = "Lấy bình luận gốc và các phản hồi")
+    @GetMapping(UrlConstant.Comment.GET_COMMENT_WITH_REPLIES)
+    public ResponseEntity<?> getCommentWithReplies(
+            @PathVariable("postId") Long postId,
+            @PathVariable("commentId") Long commentId) {
+        Optional<CommentResponseDto> comment = commentService.getCommentWithReplies(commentId);
+        if (comment.isEmpty()) {
+            throw new NotFoundException("Comment not found");
+        }
+        return VsResponseUtil.success(comment.get());
+    }
+
+    @Operation(summary = "Lấy các phản hồi (replies) của một bình luận gốc")
+    @GetMapping(UrlConstant.Comment.GET_REPLIES)
+    public ResponseEntity<?> getRepliesOfComment(@PathVariable Long commentId) {
+        List<CommentResponseDto> replies = commentService.getRepliesByParentId(commentId);
+        return VsResponseUtil.success(replies);
+    }
+
+    @Operation(summary = "Cập nhật bình luận")
+    @PutMapping(UrlConstant.Comment.UPDATE_COMMENT)
+    public ResponseEntity<?> updateComment(
+            @PathVariable("postId") Long postId,
+            @PathVariable("commentId") Long commentId,
+            @Valid @RequestBody CommentRequestDto dto,
+            Principal principal) {
+        CommentResponseDto updated = commentService.updateComment(postId, commentId, dto, principal.getName());
+        return VsResponseUtil.success(updated);
+    }
+
+    @Operation(summary = "Xóa bình luận")
+    @DeleteMapping(UrlConstant.Comment.DELETE_COMMENT)
+    public ResponseEntity<?> deleteComment(
+            @PathVariable("postId") Long postId,
+            @PathVariable("commentId") Long commentId,
+            Principal principal) {
+        commentService.deleteComment(postId, commentId, principal.getName());
+        return VsResponseUtil.success(HttpStatus.NO_CONTENT, null);
+    }
+
+}

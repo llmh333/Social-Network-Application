@@ -1,5 +1,7 @@
 package com.example.projectbase.constant;
 
+import org.springframework.security.core.parameters.P;
+
 public class UrlConstant {
 
   public static class Auth {
@@ -86,4 +88,18 @@ public class UrlConstant {
 
     private Follow() {}
   }
+
+  public static class Comment {
+    public static final String PRE_FIX = "/posts/{postId}/comments";
+    public static final String ADD_COMMENT = PRE_FIX + "/comment";
+    public static final String REPLY_COMMENT = PRE_FIX + "/{parentCommentId}/reply";
+    public static final String GET_COMMENTS = PRE_FIX;
+    public static final String GET_REPLIES = PRE_FIX + "/{commentId}/replies";
+    public static final String GET_COMMENT_WITH_REPLIES = PRE_FIX + "/{commentId}/with-replies";
+    public static final String UPDATE_COMMENT = PRE_FIX + "/{commentId}";
+    public static final String DELETE_COMMENT = PRE_FIX + "/{commentId}";
+
+    private Comment() {}
+  }
+
 }
