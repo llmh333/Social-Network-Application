@@ -31,7 +31,6 @@ public class ShareController {
     private final ShareService shareService;
     private final PostMapper postMapper;
 
-
     @PostMapping(UrlConstant.Share.SHARE_POST)
     public ResponseEntity<?> sharePost(@RequestBody SharePostRequestDto request, Principal principal) {
         try {
