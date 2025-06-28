@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,43 +47,46 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponseDto createPostWithMultiImage(PostRequestDto dto, List<MultipartFile> images) {
-        final Post post = buildPost(dto);
+        final Post post = postRepository.save(buildPost(dto));
         if (images != null && !images.isEmpty()) {
             List<MediaResponseDto> dtos = mediaService.uploadMultiImage(images);
-            dtos.forEach(mediaDto -> post.getMediaList().add(mapToMediaEntity(mediaDto, post)));
+            dtos.forEach(mediaDto -> saveMedia(post, mediaDto));
         }
-        return postMapper.toPostResponseDto(postRepository.save(post));
+        return postMapper.toPostResponseDto(post);
     }
 
     @Override
-    public PostResponseDto createPostWithVideo(PostRequestDto dto, MultipartFile video) {
-        Post post = buildPost(dto);
+    public PostResponseDto createPostWithVideo(PostRequestDto dto, MultipartFile video) throws IOException, InterruptedException {
+        Post post = postRepository.save(buildPost(dto));
         if (video != null && !video.isEmpty()) {
-            File conv = convert(video);
-            MediaResponseDto mediaDto = mediaService.uploadVideo(video, conv);
-            post.getMediaList().add(mapToMediaEntity(mediaDto, post));
+            MediaResponseDto mediaDto = mediaService.uploadVideo(video);
+            saveMedia(post, mediaDto);
         }
-        return postMapper.toPostResponseDto(postRepository.save(post));
+        return postMapper.toPostResponseDto(post);
     }
 
     @Override
-    public PostResponseDto createPostWithAudio(PostRequestDto dto, MultipartFile audio,
-                                               String audioTitle, String category, String singerName) {
-        Post post = buildPost(dto);
+    public PostResponseDto createPostWithAudio(PostRequestDto dto,
+                                               MultipartFile audio,
+                                               String audioTitle,
+                                               String category,
+                                               String singerName) {
+        Post post = postRepository.save(buildPost(dto));
 
         if (audio != null && !audio.isEmpty()) {
             validateAudioUploadRequest(audio, singerName, audioTitle);
+
             try {
-                File conv = convert(audio);
-                MediaResponseDto mediaDto = mediaService.uploadAudio(audio, conv, audioTitle, category, singerName.trim());
-                post.getMediaList().add(mapToMediaEntity(mediaDto, post));
+                MediaResponseDto mediaDto = mediaService.uploadAudio(audio, audioTitle, category, singerName.trim());
+                saveMedia(post, mediaDto);
             } catch (Exception e) {
                 log.error("Audio upload failed. Deleting post id: {}", post.getId(), e);
+                postRepository.delete(post);
                 throw new RuntimeException("Failed to upload audio: " + e.getMessage(), e);
             }
         }
 
-        return postMapper.toPostResponseDto(postRepository.save(post));
+        return postMapper.toPostResponseDto(post);
     }
 
     private void validateAudioUploadRequest(MultipartFile audio, String singerName, String audioTitle) {
@@ -97,39 +101,50 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponseDto updatePost(Long postId, PostRequestDto dto, MultipartFile image,
-                                      MultipartFile video, MultipartFile audio, String audioTitle,
-                                      String category, String singerName, List<MultipartFile> images) {
+    public PostResponseDto updatePost(Long postId,
+                                      PostRequestDto dto,
+                                      MultipartFile image,
+                                      MultipartFile video,
+                                      MultipartFile audio,
+                                      String audioTitle,
+                                      String category,
+                                      String singerName,
+                                      List<MultipartFile> images) throws IOException, InterruptedException {
         final Post post = findPostOrThrow(postId);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
 
         if (post.getMediaList() != null && !post.getMediaList().isEmpty()) {
-            List<String> publicIds = post.getMediaList().stream().map(Media::getPublicId).collect(Collectors.toList());
+            List<String> publicIds = post.getMediaList().stream()
+                    .map(Media::getPublicId)
+                    .collect(Collectors.toList());
             mediaService.deleteMedia(publicIds);
             post.getMediaList().clear();
+        } else {
+            post.setMediaList(new ArrayList<>());
         }
 
         if (image != null && !image.isEmpty()) {
             MediaResponseDto mediaDto = mediaService.uploadImage(image);
-            post.getMediaList().add(mapToMediaEntity(mediaDto, post));
+            saveMedia(post, mediaDto);
         }
         if (video != null && !video.isEmpty()) {
-            File conv = convert(video);
-            MediaResponseDto mediaDto = mediaService.uploadVideo(video, conv);
-            post.getMediaList().add(mapToMediaEntity(mediaDto, post));
+            MediaResponseDto mediaDto = mediaService.uploadVideo(video);
+            saveMedia(post, mediaDto);
         }
         if (audio != null && !audio.isEmpty()) {
-            File convAudio = convert(audio);
-            MediaResponseDto mediaDto = mediaService.uploadAudio(audio, convAudio, audioTitle, category, singerName);
-            post.getMediaList().add(mapToMediaEntity(mediaDto, post));
+            MediaResponseDto mediaDto = mediaService.uploadAudio(
+                    audio,
+                    audioTitle, category, singerName
+            );
+            saveMedia(post, mediaDto);
         }
         if (images != null && !images.isEmpty()) {
             final List<MediaResponseDto> dtos = mediaService.uploadMultiImage(images);
-            dtos.forEach(mediaDto -> post.getMediaList().add(mapToMediaEntity(mediaDto, post)));
+            dtos.forEach(mediaDto -> saveMedia(post, mediaDto));
         }
-
-        return postMapper.toPostResponseDto(postRepository.save(post));
+        postRepository.save(post);
+        return postMapper.toPostResponseDto(post);
     }
 
     @Override
@@ -197,8 +212,14 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-    private Media mapToMediaEntity(MediaResponseDto dto, Post post) {
-        return Media.builder()
+
+
+    private void saveMedia(Post post, MediaResponseDto dto) {
+        if (post.getMediaList() == null) {
+            post.setMediaList(new ArrayList<>());
+        }
+
+        Media media = Media.builder()
                 .publicId(dto.getPublicId())
                 .secureUrl(dto.getSecureUrl())
                 .resourceType(dto.getResourceType())
@@ -211,22 +232,12 @@ public class PostServiceImpl implements PostService {
                 .width(dto.getWidth())
                 .post(post)
                 .build();
+
+        post.getMediaList().add(media);
     }
 
     private Post findPostOrThrow(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Post không tồn tại id=" + id));
-    }
-
-    private File convert(MultipartFile file) {
-        try {
-            File conv = File.createTempFile("upload", file.getOriginalFilename());
-            try (FileOutputStream fos = new FileOutputStream(conv)) {
-                fos.write(file.getBytes());
-            }
-            return conv;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi convert MultipartFile", e);
-        }
     }
 }
