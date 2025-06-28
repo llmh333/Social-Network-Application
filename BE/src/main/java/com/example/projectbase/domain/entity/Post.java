@@ -30,8 +30,15 @@ public class Post extends DateAuditing {
     @JoinColumn(name= "original_post_id")
     private Post originalPost;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Media> mediaList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Reaction> reactions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
 
     @Column(name = "reaction_count", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long reactionCount = 0L;

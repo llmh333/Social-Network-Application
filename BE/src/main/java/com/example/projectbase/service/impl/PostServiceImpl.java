@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,11 +56,10 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponseDto createPostWithVideo(PostRequestDto dto, MultipartFile video) {
+    public PostResponseDto createPostWithVideo(PostRequestDto dto, MultipartFile video) throws IOException, InterruptedException {
         Post post = postRepository.save(buildPost(dto));
         if (video != null && !video.isEmpty()) {
-            File conv = convert(video);
-            MediaResponseDto mediaDto = mediaService.uploadVideo(video, conv);
+            MediaResponseDto mediaDto = mediaService.uploadVideo(video);
             saveMedia(post, mediaDto);
         }
         return postMapper.toPostResponseDto(post);
@@ -77,8 +77,7 @@ public class PostServiceImpl implements PostService {
             validateAudioUploadRequest(audio, singerName, audioTitle);
 
             try {
-                File conv = convert(audio);
-                MediaResponseDto mediaDto = mediaService.uploadAudio(audio, conv, audioTitle, category, singerName.trim());
+                MediaResponseDto mediaDto = mediaService.uploadAudio(audio, audioTitle, category, singerName.trim());
                 saveMedia(post, mediaDto);
             } catch (Exception e) {
                 log.error("Audio upload failed. Deleting post id: {}", post.getId(), e);
@@ -110,7 +109,7 @@ public class PostServiceImpl implements PostService {
                                       String audioTitle,
                                       String category,
                                       String singerName,
-                                      List<MultipartFile> images) {
+                                      List<MultipartFile> images) throws IOException, InterruptedException {
         final Post post = findPostOrThrow(postId);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
@@ -130,14 +129,12 @@ public class PostServiceImpl implements PostService {
             saveMedia(post, mediaDto);
         }
         if (video != null && !video.isEmpty()) {
-            File conv = convert(video);
-            MediaResponseDto mediaDto = mediaService.uploadVideo(video, conv);
+            MediaResponseDto mediaDto = mediaService.uploadVideo(video);
             saveMedia(post, mediaDto);
         }
         if (audio != null && !audio.isEmpty()) {
-            File convAudio = convert(audio);
             MediaResponseDto mediaDto = mediaService.uploadAudio(
-                    audio, convAudio,
+                    audio,
                     audioTitle, category, singerName
             );
             saveMedia(post, mediaDto);
@@ -242,17 +239,5 @@ public class PostServiceImpl implements PostService {
     private Post findPostOrThrow(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Post không tồn tại id=" + id));
-    }
-
-    private File convert(MultipartFile file) {
-        try {
-            File conv = File.createTempFile("upload", file.getOriginalFilename());
-            try (FileOutputStream fos = new FileOutputStream(conv)) {
-                fos.write(file.getBytes());
-            }
-            return conv;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi convert MultipartFile", e);
-        }
     }
 }

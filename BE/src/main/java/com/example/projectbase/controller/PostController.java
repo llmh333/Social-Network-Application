@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -31,7 +32,7 @@ import java.util.List;
 @RestApiV1
 @RequiredArgsConstructor
 @Validated
-@Tag(name = "API bài viết", description = "data = {'content': 'value',\n 'title': 'value'}")
+@Tag(name = "API bài viết", description = "data = {'title': 'value', \n 'content': 'value'}")
 public class PostController {
 
     private final PostService postService;
@@ -53,7 +54,7 @@ public class PostController {
     public ResponseEntity<?> createPostWithVideo(
             @RequestParam("data") String data,
             @RequestPart(value = "video", required = false) MultipartFile video
-    ) throws JsonProcessingException {
+    ) throws IOException, InterruptedException {
         PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
         PostResponseDto result = postService.createPostWithVideo(dto, video);
         return VsResponseUtil.success(HttpStatus.CREATED, result);
@@ -115,7 +116,7 @@ public class PostController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "singerName", required = false) String singerName,
             @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) throws JsonProcessingException {
+    ) throws IOException, InterruptedException {
         PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
         PostResponseDto updated = postService.updatePost(
                 id, dto, image, video, audio,
@@ -128,6 +129,6 @@ public class PostController {
     @DeleteMapping(path = UrlConstant.Post.DELETE_POST)
     public ResponseEntity<?> deletePost(@PathVariable("id") Long id) {
         postService.deletePost(id);
-        return VsResponseUtil.success(HttpStatus.NO_CONTENT, null);
+        return VsResponseUtil.success(HttpStatus.NO_CONTENT);
     }
 }
