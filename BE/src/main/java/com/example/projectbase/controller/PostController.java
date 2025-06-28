@@ -32,7 +32,7 @@ import java.util.List;
 @RestApiV1
 @RequiredArgsConstructor
 @Validated
-@Tag(name = "API bài viết", description = "data = {'content': 'value',\n 'title': 'value'}")
+@Tag(name = "API bài viết", description = "data = {'title': 'value', \n 'content': 'value'}")
 public class PostController {
 
     private final PostService postService;
