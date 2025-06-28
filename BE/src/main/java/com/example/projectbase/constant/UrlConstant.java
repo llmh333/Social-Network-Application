@@ -89,6 +89,12 @@ public class UrlConstant {
     private Follow() {}
   }
 
+
+  public static class Share{
+    public static final String PRE_FIX="/share";
+    public static final String SHARE_POST = PRE_FIX+"/post";
+    public static final String SHARE_MEDIA= PRE_FIX+"/media";
+  }
   public static class Comment {
     public static final String PRE_FIX = "/posts/{postId}/comments";
     public static final String ADD_COMMENT = PRE_FIX + "/comment";
@@ -101,5 +107,6 @@ public class UrlConstant {
 
     private Comment() {}
   }
+
 
 }
