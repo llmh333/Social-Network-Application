@@ -1,9 +1,10 @@
 package com.example.projectbase.service.impl;
 
 import com.example.projectbase.domain.dto.request.SharePostRequestDto;
+import com.example.projectbase.domain.dto.response.ShareMediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.entity.Post;
-import com.example.projectbase.exception.ResourceNotFoundException;
+import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.PostRepository;
 import com.example.projectbase.service.ShareService;
@@ -25,6 +26,9 @@ public class ShareServiceImpl implements ShareService {
         Post originalPost = postRepository.findById(request.getOriginalPostId())
                 .orElseThrow(() -> new IllegalArgumentException("Original post not found with id: " + request.getOriginalPostId()));
 
+        originalPost.setShareCount(originalPost.getShareCount() + 1);
+        postRepository.save(originalPost);
+
         Post newPost = Post.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -36,9 +40,21 @@ public class ShareServiceImpl implements ShareService {
     }
 
     @Override
-    public Media getMediaById(Long id) {
-        return mediaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Media not found"));
+    public ShareMediaResponseDto getShareMedia(Long id) {
+        Media media = mediaRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Media not found with id: " + id));
+
+        String downloadUrl = media.getPlaybackUrl();
+        if (downloadUrl == null || downloadUrl.isEmpty()) {
+            downloadUrl = media.getSecureUrl();
+        }
+
+        return ShareMediaResponseDto.builder()
+                .id(media.getId())
+                .title(media.getTitle())
+                .singerName(media.getSingerName())
+                .downloadUrl(downloadUrl)
+                .build();
     }
 
 }

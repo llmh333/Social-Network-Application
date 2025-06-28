@@ -12,4 +12,5 @@ public class PostSummaryDto {
     private String  title;
     private String content;
     private String createdBy;
+    private Long shareCount;
 }

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
+import com.example.projectbase.base.VsResponseUtil;
 import java.security.Principal;
 
 
@@ -38,7 +38,7 @@ public class ShareController {
             String createdBy = principal.getName();
             Post sharedPost = shareService.sharePost(request,createdBy);
             SharePostResponseDto response = postMapper.toDto(sharedPost);
-            return ResponseEntity.ok(response);
+            return VsResponseUtil.success(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
@@ -47,22 +47,10 @@ public class ShareController {
     }
 
 
-    @GetMapping(UrlConstant.Share.SHARE_MEDIA+"/{id}")
-    public ResponseEntity<ShareMediaResponseDto> ShareMedia(@PathVariable Long id) {
-        Media media = shareService.getMediaById(id);
-        String downloadUrl = media.getPlaybackUrl();
-        if (downloadUrl == null || downloadUrl.isEmpty()) {
-            downloadUrl = media.getSecureUrl();
-        }
-
-        ShareMediaResponseDto response = ShareMediaResponseDto.builder()
-                .id(media.getId())
-                .title(media.getTitle())
-                .singerName(media.getSingerName())
-                .downloadUrl(downloadUrl)
-                .build();
-
-        return ResponseEntity.ok(response);
+    @GetMapping(UrlConstant.Share.SHARE_MEDIA + "/{id}")
+    public ResponseEntity<?> shareMedia(@PathVariable Long id) {
+        ShareMediaResponseDto response = shareService.getShareMedia(id);
+        return VsResponseUtil.success(response);
     }
 }
 
