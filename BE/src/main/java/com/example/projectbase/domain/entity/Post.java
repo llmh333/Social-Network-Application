@@ -23,9 +23,13 @@ public class Post extends DateAuditing {
 
     @Column(nullable = false)
     private String title;
-
     @Column(nullable = false)
     private String content;
+
+    @ManyToOne
+    @JoinColumn(name= "original_post_id")
+    private Post originalPost;
+
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Media> mediaList = new ArrayList<>();
@@ -42,6 +46,9 @@ public class Post extends DateAuditing {
     @Column(name = "comment_count", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long commentCount = 0L;
 
+    @Column(name = "share_count", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+    private Long shareCount = 0L;
+
     @CreatedBy
     @Column(name = "created_by")
     private String createdBy;
@@ -50,5 +57,6 @@ public class Post extends DateAuditing {
     public void prePersist() {
         if (reactionCount == null) reactionCount = 0L;
         if (commentCount == null) commentCount = 0L;
+        if (shareCount == null) shareCount = 0L;
     }
 }
