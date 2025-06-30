@@ -108,5 +108,15 @@ public class UrlConstant {
     private Comment() {}
   }
 
+  public static class Role {
+    public static final String PRE_FIX = "/roles";
+    public static final String CREATE_ROLE = PRE_FIX + "/create";
+    public static final String GET_ROLES = PRE_FIX;
+    public static final String GET_ROLE_BY_ID = PRE_FIX + "/{id}";
+    public static final String UPDATE_ROLE = PRE_FIX + "/{id}";
+    public static final String DELETE_ROLE = PRE_FIX + "/{id}";
+
+    private Role() {}
+  }
 
 }

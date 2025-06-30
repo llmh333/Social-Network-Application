@@ -19,6 +19,10 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
     private final String lastName;
 
+    private final String roleId;
+
+    private final String roleName;
+
     @Setter
     private Map<String, Object> attributes;
 
@@ -30,52 +34,67 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(String username, String password, Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
-        this(null, null, null, username, password, authorities, attributes);
+    public UserPrincipal(String id, String firstName, String lastName, String username, String password,
+                         Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
+        this(id, firstName, lastName, username, password, authorities, attributes, "", "USER");
     }
 
     public UserPrincipal(String username, Collection<? extends GrantedAuthority> authorities) {
-        this(null, null, null, username, "", authorities, new HashMap<>());
+        this(null, "", "", username, "", authorities, new HashMap<>(), "", "USER");
     }
 
     public UserPrincipal(String id, String firstName, String lastName, String username, String password,
-                         Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
+                         Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes,
+                         String roleId, String roleName) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.password = password;
         this.attributes = attributes;
-
-        if (authorities == null) {
-            this.authorities = null;
-        } else {
-            this.authorities = new ArrayList<>(authorities);
-        }
+        this.authorities = authorities == null ? null : new ArrayList<>(authorities);
+        this.roleId = roleId;
+        this.roleName = roleName;
     }
 
     public static UserPrincipal create(User user) {
-        List<GrantedAuthority> authorities = new LinkedList<>();
-        if (user.getRole() == null) {
-            authorities.add(new SimpleGrantedAuthority("USER"));
-        } else {
-            authorities.add(new SimpleGrantedAuthority(user.getRole().getName()));
-        }
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        String roleName = user.getRole() != null ? user.getRole().getName() : "USER";
+        String roleId = user.getRole() != null ? String.valueOf(user.getRole().getId()) : "";
 
-        Map<String, Object> attributes = new HashMap<>();
+        authorities.add(new SimpleGrantedAuthority(roleName));
 
-        return new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(),
-                user.getUsername(), user.getPassword(), authorities, attributes);
+        return new UserPrincipal(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getPassword(),
+                authorities,
+                new HashMap<>(),
+                roleId,
+                roleName
+        );
     }
 
     public static OAuth2User create(User user, Map<String, Object> attributes) {
-        List<GrantedAuthority> authorities = new LinkedList<>();
-        if (user.getRole() == null) {
-            authorities.add(new SimpleGrantedAuthority("USER"));
-        } else {
-            authorities.add(new SimpleGrantedAuthority(user.getRole().getName()));
-        }
-        return new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(), user.getUsername(), user.getPassword(), authorities, attributes);
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        String roleName = user.getRole() != null ? user.getRole().getName() : "USER";
+        String roleId = user.getRole() != null ? String.valueOf(user.getRole().getId()) : "";
+
+        authorities.add(new SimpleGrantedAuthority(roleName));
+
+        return new UserPrincipal(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getPassword(),
+                authorities,
+                attributes,
+                roleId,
+                roleName
+        );
     }
 
     public String getId() {
@@ -89,6 +108,15 @@ public class UserPrincipal implements UserDetails, OAuth2User {
     public String getLastName() {
         return lastName;
     }
+
+    public String getRoleId() {
+        return roleId;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
 
     @Override
     public String getUsername() {
