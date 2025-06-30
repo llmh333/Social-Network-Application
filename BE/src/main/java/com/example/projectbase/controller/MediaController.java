@@ -10,9 +10,12 @@ import com.example.projectbase.domain.dto.pagination.PaginationRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
+import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.exception.InvalidException;
 import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.repository.MediaRepository;
+import com.example.projectbase.security.CurrentUser;
+import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.impl.VideoProcessingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +50,7 @@ public class MediaController {
     private final MediaService mediaService;
     private final VideoProcessingService videoProcessingService;
     private final MediaRepository mediaRepository;
+    private final MediaMapper mediaMapper;
 
     @Operation(summary = "API Upload Video")
     @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -110,5 +114,14 @@ public class MediaController {
             return VsResponseUtil.success(HttpStatus.NO_CONTENT);
         }
         return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, ErrorMessage.ERR_EXCEPTION_GENERAL);
+    }
+
+    @PostMapping(UrlConstant.Media.UPLOAD_AVATAR)
+    public ResponseEntity<?> uploadAvatar(
+            @CurrentUser UserPrincipal principal,
+            @RequestPart("file") MultipartFile file) {
+
+        Media media = mediaService.uploadAvatar(principal, file);
+        return VsResponseUtil.success(mediaMapper.toMediaResponseDto(media));
     }
 }
