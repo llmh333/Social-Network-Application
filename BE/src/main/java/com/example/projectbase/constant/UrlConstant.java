@@ -11,7 +11,6 @@ public class UrlConstant {
     public static final String LOGIN_GOOGLE = PRE_FIX + "/login/google";
     public static final String LOGIN_FACEBOOK = PRE_FIX + "/login/facebook";
     public static final String LOGOUT = PRE_FIX + "/logout";
-    public static final String SIGNUP = PRE_FIX +"/signup";
     public static final String REFRESH_TOKEN = PRE_FIX + "/refresh-token";
     public static final String ME = PRE_FIX + "/me";
     public static final String UPLOAD_PROFILE_PICTURE = PRE_FIX + "/upload-profile-picture";
@@ -38,7 +37,7 @@ public class UrlConstant {
     public static final String GET_ALL_USERS = PRE_FIX + "/all";
     public static final String UPDATE_USERNAME = PRE_FIX + "/update/{id}";
     public static final String DELETE_USER= PRE_FIX + "/delete/{id}";
-    
+    public static final String CHANGE_PASSWORD = PRE_FIX + "/changepassword";
     private User() {
     }
   }
@@ -53,6 +52,7 @@ public class UrlConstant {
     public static final String UPLOAD_MEDIA_AUDIO = PRE_FIX + "/upload/audio";
     public static final String UPLOAD_MULTI_MEDIA_IMAGE = PRE_FIX + "/upload/multi/image";
     public static final String DELETE_MEDIA = PRE_FIX + "/delete";
+    public static final String UPLOAD_AVATAR= PRE_FIX + "/upload/avatar";
   }
 
   public static class Post {
@@ -94,6 +94,8 @@ public class UrlConstant {
     public static final String PRE_FIX="/share";
     public static final String SHARE_POST = PRE_FIX+"/post";
     public static final String SHARE_MEDIA= PRE_FIX+"/media";
+    private Share(){}
+
   }
   public static class Comment {
     public static final String PRE_FIX = "/posts/{postId}/comments";
@@ -106,6 +108,12 @@ public class UrlConstant {
     public static final String DELETE_COMMENT = PRE_FIX + "/{commentId}";
 
     private Comment() {}
+  }
+
+  public static class UserSetting{
+    public static final String PRE_FIX = "/userSetting";
+    public static final String UPDATE_SETTING= PRE_FIX +"/update";
+    private UserSetting(){}
   }
 
 

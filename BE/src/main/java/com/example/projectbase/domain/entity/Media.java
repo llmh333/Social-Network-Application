@@ -67,4 +67,6 @@ public class Media extends DateAuditing {
     @Enumerated(EnumType.STRING)
     private UploadStatusConstant status;
 
+    @Column(name="type")
+    private String type;
 }
