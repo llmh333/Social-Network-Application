@@ -5,8 +5,6 @@ import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -58,13 +56,11 @@ public class Media extends DateAuditing {
 
     @ManyToOne
     @JoinColumn(name = "author_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_USER"))
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_POT"))
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
     @Column(name = "status_upload")

@@ -65,7 +65,6 @@ public class ProjectBaseApplication {
         permissions.add("UPDATE");
         permissions.add("DELETE");
         roleRepository.save(Role.builder().name(RoleConstant.ADMIN).permissions(permissions).build());
-        roleRepository.save(Role.builder().name(RoleConstant.USER).permissions(permissions).build());
       }
       role = roleRepository.findByRoleName(RoleConstant.ADMIN);
       //init admin

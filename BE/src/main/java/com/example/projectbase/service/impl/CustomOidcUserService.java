@@ -6,7 +6,6 @@ import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.OidcUserPrincipal;
-import com.example.projectbase.service.OAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,7 +30,6 @@ import java.util.Optional;
 @Service
 public class CustomOidcUserService extends OidcUserService {
     private final UserRepository userRepository;
-    private final OAuthService oAuthService;
     private final RoleRepository roleRepository;
 
     @Override
@@ -51,15 +49,13 @@ public class CustomOidcUserService extends OidcUserService {
 
             if (email == null || email.trim().isEmpty()) {
                 log.error("Email is null or empty for OIDC provider: {}", registrationId);
-
                 throw new OAuth2AuthenticationException("Email not found in OIDC response");
             }
 
             Optional<User> userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) {
                 log.error("User not found with email: {}", email);
-                oAuthService.createNewUser(registrationId, attributes, email);
-                userOptional = userRepository.findByEmail(email);
+                throw new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_EMAIL, new String[]{email});
             }
 
             User user = userOptional.get();
