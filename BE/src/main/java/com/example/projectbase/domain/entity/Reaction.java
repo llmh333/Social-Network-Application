@@ -3,6 +3,8 @@ package com.example.projectbase.domain.entity;
 import com.example.projectbase.constant.ReactionTypeConstant;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedDate;
 
 import javax.persistence.*;
@@ -26,11 +28,13 @@ public class Reaction extends DateAuditing {
     private ReactionTypeConstant reactionType;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "post_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
 }
