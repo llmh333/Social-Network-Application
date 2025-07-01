@@ -24,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.time.format.DateTimeFormatter;
@@ -52,8 +54,8 @@ public class OAuthServiceImpl extends DefaultOAuth2UserService implements OAuthS
 
         String email = extractEmail(attributes);
 
-        User user = userRepository.findByEmail(email).orElseThrow(
-                () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_EMAIL, new String[]{email})
+        User user = userRepository.findByEmail(email).orElse(
+                createNewUser(registrationId, attributes, email)
         );
 
         return UserPrincipal.create(user, attributes);
@@ -90,14 +92,19 @@ public class OAuthServiceImpl extends DefaultOAuth2UserService implements OAuthS
     private String extractEmail(Map<String, Object> attributes) {
         String email = (String) attributes.get("email");
         if (!StringUtils.hasText(email)) {
-            logger.error("Email not found in OAuth2 attributes");
             String name = attributes.get("name").toString();
-            email = name + "@facebook.com";
+            String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+            String timestamp = LocalDateTime.now().format(formatter);
+            String withoutDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+            String resultEmail = withoutDiacritics.replaceAll("\\s+", "");
+            logger.error("Email not found in OAuth2 attributes");
+            email = resultEmail + timestamp + "@facebook.com";
         }
-        return email.toLowerCase();
+        return email;
     }
 
-    private User createNewUser(String registrationId, Map<String, Object> attributes, String email) {
+    public User createNewUser(String registrationId, Map<String, Object> attributes, String email) {
         logger.info("Creating new user with email: {}", email);
         logger.info("attributes: {}", attributes.toString());
         String providerId = null;
@@ -110,25 +117,12 @@ public class OAuthServiceImpl extends DefaultOAuth2UserService implements OAuthS
             providerId = getAttributeOrDefault(attributes, "id", null);
             firstName = getAttributeOrDefault(attributes, "first_name", null);
             lastName = getAttributeOrDefault(attributes, "last_name", null);
-            String genderFB = getAttributeOrDefault(attributes, "gender", "unknown");
             try {
                 Map<String, Object> pictureObj = (Map<String, Object>) attributes.get("picture");
                 Map<String, Object> data = (Map<String, Object>) pictureObj.get("data");
                 pictureUrl = (String) data.get("url");
             } catch (Exception e) {
                 pictureUrl = "";
-            }
-            if (genderFB.equals(GenderConstant.FEMALE.name())) {
-                gender = GenderConstant.FEMALE;
-            } else {
-                gender = GenderConstant.MALE;
-            }
-            String birthdayStr = (String) attributes.get("birthday");
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-            try {
-                birthday = LocalDate.parse(birthdayStr, formatter);
-            } catch (Exception e) {
-                // fallback
             }
         } else if (registrationId.equals("google")) {
             providerId = getAttributeOrDefault(attributes, "sub", null);
