@@ -1,5 +1,7 @@
 package com.example.projectbase.domain.entity;
 
+import com.example.projectbase.constant.LanguageSetting;
+import com.example.projectbase.constant.ThemeSetting;
 import lombok.*;
 
 import javax.persistence.*;
@@ -18,8 +20,14 @@ public class UserSetting {
     private Long id;
 
     @Column(nullable = false)
-    private String theme;
+    @Enumerated(EnumType.STRING)
+    private ThemeSetting theme;
 
     @Column(nullable = false)
-    private String language;
+    @Enumerated(EnumType.STRING)
+    private LanguageSetting language;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 }

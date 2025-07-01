@@ -2,13 +2,9 @@ package com.example.projectbase.controller;
 
 import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
-import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
-import com.example.projectbase.domain.dto.request.UserCreateDto;
-import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
-import com.example.projectbase.domain.dto.response.SignUpResponseDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
 import com.example.projectbase.service.AuthService;
@@ -22,7 +18,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,13 +67,6 @@ public class AuthController {
     return multipartFile.getContentType();
   }
 
-
-  @Operation(summary = "API signup")
-  @PostMapping("/signup")
-  public ResponseEntity<SignUpResponseDto> signUp(@Valid @RequestBody UserCreateDto request) {
-    SignUpResponseDto response = authService.signUp(request);
-    return ResponseEntity.ok(response);
-  }
 
   @Operation(
           summary = "API Logout",

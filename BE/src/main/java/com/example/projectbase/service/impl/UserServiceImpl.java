@@ -5,6 +5,7 @@ import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.pagination.PagingMeta;
+import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
 import com.example.projectbase.domain.dto.response.UserDto;
@@ -23,6 +24,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,6 +42,8 @@ public class UserServiceImpl implements UserService {
   private final RoleRepository roleRepository;
 
   private final UserMapper userMapper;
+
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   public UserDto getUserById(String userId) {
@@ -115,8 +120,18 @@ public class UserServiceImpl implements UserService {
     userRepository.delete(user);
   }
 
+  @Override
+  public void changePassword(String username, ChangePasswordRequestDto request) {
+      User user = userRepository.findByUsername(username)
+              .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+    if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+      throw new IllegalArgumentException("Old password is incorrect");
+    }
 
+    user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    userRepository.save(user);
+}
 
 
 }
