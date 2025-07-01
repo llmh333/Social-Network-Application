@@ -284,6 +284,64 @@ public class MediaServiceImpl implements MediaService {
         return true;
     }
 
+    @Override
+    public Media uploadAvatar(UserPrincipal principal, MultipartFile file) {
+        log.info("[UPLOAD AVATAR] User: {}", principal.getUsername());
+
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new InvalidException(ErrorMessage.Media.ERR_INVALID_MEDIA_TYPE);
+        }
+        if (file.getSize() > MediaConstant.MAX_SIZE_IMAGE) {
+            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
+        }
+
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+
+        mediaRepository.findByUserAndType(user, "avatar").ifPresent(old -> {
+            try {
+                cloudinary.uploader().destroy(old.getPublicId(), ObjectUtils.emptyMap());
+                mediaRepository.delete(old);
+                log.info("[DELETE OLD AVATAR] {}", old.getPublicId());
+            } catch (IOException e) {
+                log.error("Failed to delete old avatar from cloudinary", e);
+            }
+        });
+
+        String publicId = "avatar/" + user.getId() + "_" + System.currentTimeMillis();
+
+
+        Map<String, Object> metaData = ObjectUtils.asMap(
+                "resource_type", "image",
+                "quality", "auto",
+                "fetch_format", "auto",
+                "public_id", publicId
+        );
+
+        try {
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), metaData);
+            log.info("[UPLOAD AVATAR RESULT] {}", result);
+
+            Media media = Media.builder()
+                    .publicId(result.get("public_id").toString())
+                    .secureUrl(result.get("secure_url").toString())
+                    .format(result.get("format").toString())
+                    .resourceType(result.get("resource_type").toString())
+                    .dataSize(file.getSize())
+                    .width(Long.valueOf((Integer) result.get("width")))
+                    .height(Long.valueOf((Integer) result.get("height")))
+                    .status(UploadStatusConstant.DONE)
+                    .type("avatar")
+                    .user(user)
+                    .build();
+
+            return mediaRepository.save(media);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload avatar", e);
+        }
+    }
+
     private void validateFile(MultipartFile file) {
         log.info("validateFile: {}", file.getContentType());
         String formatFile = file.getContentType();

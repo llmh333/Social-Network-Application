@@ -2,6 +2,7 @@ package com.example.projectbase.service;
 
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
+import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
@@ -23,6 +24,8 @@ public interface UserService {
   UserDto updateUserName(String id, UserUpdateDto dto);
 
   void deleteUser(String id);
+  
+  void changePassword(String username, ChangePasswordRequestDto dto);
 
 
 }
