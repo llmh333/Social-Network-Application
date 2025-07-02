@@ -16,6 +16,8 @@ public class ErrorMessage {
   public static final String INVALID_DATE = "invalid.date-format";
   public static final String INVALID_DATE_FEATURE = "invalid.date-future";
   public static final String INVALID_DATETIME = "invalid.datetime-format";
+  public static final String INVALID_PASSWORD = "invalid.password";
+  public static final String INVALID_EMAIL = "invalid.email";
 
   public static class Auth {
     public static final String ERR_INCORRECT_USERNAME = "exception.auth.incorrect.username";
@@ -61,5 +63,16 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_FOLLOWING = "exception.follow.not.found.following";
     public static final String ERR_REMOVE_FOLLOWER = "exception.follower.not.found.follower";
     public static final String ERR_UNFOLLOW_USER = "exception.follow.not.found.unfollow";
+  }
+
+  public static class OtpForgotPassword {
+    public static final String ERR_NOT_FOUND = "exception.otp.not.found";
+    public static final String ERR_SEND_FAILED = "exception.otp.send.failed";
+    public static final String ERR_OTP_EXPIRED = "exception.otp.expired";
+    public static final String ERR_VERIFY_FAILED = "exception.otp.verify";
+    public static final String ERR_NOT_VERIFIED = "exception.otp.not.verified";
+    public static final String ERR_CHANGE_PASSWORD_EXPIRED = "exception.changed.password.confirm.expired";
+    public static final String ERR_PASSWORD_NOT_MATCHED = "exception.changed.password.not.match";
+    public static final String ERR_DELAY_GET_OTP = "exception.otp.delay.get";
   }
 }

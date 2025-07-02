@@ -7,15 +7,11 @@ import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
-import com.example.projectbase.domain.dto.response.LoginResponseDto;
-import com.example.projectbase.domain.dto.response.UserDto;
 import com.example.projectbase.security.CurrentUser;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.tags.Tags;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestApiV1

@@ -42,6 +42,13 @@ public class UrlConstant {
     }
   }
 
+  public static class OtpCode {
+    public static final String PRE_FIX = "/forgot-password";
+    public static final String SEND_OTP = PRE_FIX + "/send-otp-code";
+    public static final String VERIFY_OTP = PRE_FIX + "/verify-otp-code";
+    public static final String CHANGE_PASSWORD = PRE_FIX + "/confirm-new-password";
+  }
+
   public static class Media {
     private static final String PRE_FIX = "/media";
     public static final String GET_MEDIA_BY_RESOURCE_TYPE = PRE_FIX + "/";

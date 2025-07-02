@@ -5,23 +5,20 @@ import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
-import com.example.projectbase.domain.dto.response.LoginResponseDto;
-import com.example.projectbase.domain.dto.response.UserDto;
+import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.security.UserPrincipal;
-
-import java.util.List;
 
 public interface UserService {
 
-  UserDto getUserById(String userId);
+  UserResponseDto getUserById(String userId);
 
-  UserDto getCurrentUser(UserPrincipal principal);
+  UserResponseDto getCurrentUser(UserPrincipal principal);
 
-  UserDto createUser(UserCreateDto dto);
+  UserResponseDto createUser(UserCreateDto dto);
 
-  PaginationResponseDto<UserDto> getAllUsers(PaginationFullRequestDto request);
+  PaginationResponseDto<UserResponseDto> getAllUsers(PaginationFullRequestDto request);
 
-  UserDto updateUserName(String id, UserUpdateDto dto);
+  UserResponseDto updateUserName(String id, UserUpdateDto dto);
 
   void deleteUser(String id);
   
