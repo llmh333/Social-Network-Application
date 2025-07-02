@@ -7,6 +7,11 @@ import org.springframework.util.MultiValueMap;
 
 public class VsResponseUtil {
 
+  public static ResponseEntity<RestData<?>> successWithMessage(String message) {
+    RestData<?> response = RestData.successWithMessage(message);
+    return new ResponseEntity<>(response, HttpStatus.OK);
+  }
+
   public static ResponseEntity<RestData<?>> success(Object data) {
     return success(HttpStatus.OK, data);
   }

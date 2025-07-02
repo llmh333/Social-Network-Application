@@ -8,7 +8,7 @@ import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
-import com.example.projectbase.domain.dto.response.UserDto;
+import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.domain.entity.Role;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.UserMapper;
@@ -19,7 +19,6 @@ import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.UserService;
 import com.example.projectbase.util.PaginationUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -29,8 +28,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,20 +43,20 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
 
   @Override
-  public UserDto getUserById(String userId) {
+  public UserResponseDto getUserById(String userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
     return userMapper.toUserDto(user);
   }
 
   @Override
-  public UserDto getCurrentUser(UserPrincipal principal) {
+  public UserResponseDto getCurrentUser(UserPrincipal principal) {
     User user = userRepository.getUser(principal);
     return userMapper.toUserDto(user);
   }
 
   @Override
-  public UserDto createUser(UserCreateDto dto) {
+  public UserResponseDto createUser(UserCreateDto dto) {
     User user = userMapper.toUser(dto);
     Role role = roleRepository.findByRoleName("USER")
             .orElseThrow(() -> new RuntimeException("Default role not found"));
@@ -68,12 +65,12 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public PaginationResponseDto<UserDto> getAllUsers(PaginationFullRequestDto request) {
+  public PaginationResponseDto<UserResponseDto> getAllUsers(PaginationFullRequestDto request) {
     Pageable pageable = PaginationUtil.buildPageable(request, SortByDataConstant.USER);
 
     Page<User> pageUser = userRepository.findAll(pageable);
 
-    List<UserDto> userDtos = pageUser.getContent().stream()
+    List<UserResponseDto> userResponseDtos = pageUser.getContent().stream()
             .map(userMapper::toUserDto)
             .collect(Collectors.toList());
 
@@ -98,12 +95,12 @@ public class UserServiceImpl implements UserService {
             sortType
     );
 
-    return new PaginationResponseDto<>(meta, userDtos);
+    return new PaginationResponseDto<>(meta, userResponseDtos);
 
   }
 
   @Override
-  public UserDto updateUserName(String id, UserUpdateDto dto) {
+  public UserResponseDto updateUserName(String id, UserUpdateDto dto) {
     User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
 

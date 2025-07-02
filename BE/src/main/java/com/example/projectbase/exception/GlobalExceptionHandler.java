@@ -5,16 +5,13 @@ import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.ErrorMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.internal.engine.path.PathImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -47,18 +44,17 @@ public class GlobalExceptionHandler {
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
   }
 
-  //Error validate for body
-  @ExceptionHandler(BindException.class)
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  public ResponseEntity<RestData<?>> handleValidException(BindException ex) {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<RestData<?>> handleValidException(MethodArgumentNotValidException ex) {
     Map<String, String> result = new HashMap<>();
     ex.getBindingResult().getAllErrors().forEach((error) -> {
       String fieldName = ((FieldError) error).getField();
       String errorMessage = messageSource.getMessage(Objects.requireNonNull(error.getDefaultMessage()), null,
-          LocaleContextHolder.getLocale());
+              LocaleContextHolder.getLocale());
       result.put(fieldName, errorMessage);
     });
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
+
   }
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
