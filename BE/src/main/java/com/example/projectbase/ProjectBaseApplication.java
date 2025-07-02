@@ -15,6 +15,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Instant;
@@ -28,6 +30,7 @@ import java.util.Optional;
 @EnableConfigurationProperties({AdminInfoProperties.class})
 @SpringBootApplication
 @EnableWebSecurity
+@EnableScheduling
 public class ProjectBaseApplication {
 
   private final UserRepository userRepository;
