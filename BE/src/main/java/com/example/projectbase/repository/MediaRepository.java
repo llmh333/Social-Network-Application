@@ -27,8 +27,4 @@ public interface MediaRepository extends JpaRepository<Media, Long> {
     void deleteAllByPublicIdIn(List<String> publicIds);
 
     Media findMediaByPublicId(String publicId);
-
-    Optional<Media> findByUserAndType(User user, String type);
-
-
 }

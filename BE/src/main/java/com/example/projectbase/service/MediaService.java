@@ -19,10 +19,8 @@ public interface MediaService {
 
     public MediaResponseDto uploadVideo(MultipartFile multipartFile) throws IOException, InterruptedException;
     public MediaResponseDto uploadImage(MultipartFile file) throws IOException, InterruptedException;
-    public MediaResponseDto uploadAudio(MultipartFile multipartFile, String title, String category, String singerName) throws IOException, InterruptedException;
+    public List<MediaResponseDto> uploadAudio(MultipartFile audioFile, MultipartFile thumbnailFile, String title, String category, String singerName) throws IOException, InterruptedException;
     public List<MediaResponseDto> uploadMultiImage(List<MultipartFile> file);
 
     public boolean deleteMedia(List<String> publicIdList);
-    
-    public Media uploadAvatar(UserPrincipal principal , MultipartFile file);
 }

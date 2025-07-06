@@ -16,6 +16,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
@@ -54,8 +55,15 @@ public class GlobalExceptionHandler {
       result.put(fieldName, errorMessage);
     });
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
-
   }
+
+  @ExceptionHandler(MissingServletRequestPartException.class)
+  public ResponseEntity<RestData<?>> handlerMissingServletRequestPartException(MissingServletRequestPartException ex) {
+    Map<String, String> result = new HashMap<>();
+    result.put(ex.getRequestPartName(), ex.getMessage());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
+  }
+
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex) {
@@ -101,14 +109,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(UploadFileException.class)
   public ResponseEntity<RestData<?>> handleUploadImageException(UploadFileException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message, ex);
+    log.error(message);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
   @ExceptionHandler(UnauthorizedException.class)
   public ResponseEntity<RestData<?>> handleUnauthorizedException(UnauthorizedException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message, ex);
+    log.error(message);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
@@ -136,7 +144,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MaxUploadSizeMediaException.class)
   public ResponseEntity<RestData<?>> handleMaxUploadSizeMediaException(MaxUploadSizeMediaException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message, ex);
+    log.error(message);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 }

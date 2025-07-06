@@ -32,17 +32,9 @@ public class ShareController {
     private final PostMapper postMapper;
 
     @PostMapping(UrlConstant.Share.SHARE_POST)
-    public ResponseEntity<?> sharePost(@RequestBody SharePostRequestDto request, Principal principal) {
-        try {
-            String createdBy = principal.getName();
-            Post sharedPost = shareService.sharePost(request,createdBy);
-            SharePostResponseDto response = postMapper.toDto(sharedPost);
-            return VsResponseUtil.success(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to share post");
-        }
+    public ResponseEntity<?> sharePost(@RequestBody SharePostRequestDto request) {
+        SharePostResponseDto responseDto = shareService.sharePost(request);
+        return VsResponseUtil.success(responseDto);
     }
 
 

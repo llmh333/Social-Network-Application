@@ -62,18 +62,18 @@ public class MediaController {
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
-    @Operation(summary = "API Upload Audio")
-    @PostMapping(value =UrlConstant.Media.UPLOAD_MEDIA_AUDIO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadAudio(@RequestParam("file") MultipartFile multipartFile,
-                                         @Valid @RequestParam("title") String title,
-                                         @Valid @RequestParam("category") String category,
-                                         @Valid @RequestParam("singer") String singerName) throws IOException, InterruptedException {
-        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_AUDIO) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
-        }
-        MediaResponseDto responseDto = mediaService.uploadAudio(multipartFile, title, category, singerName);
-        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
-    }
+//    @Operation(summary = "API Upload Audio")
+//    @PostMapping(value =UrlConstant.Media.UPLOAD_MEDIA_AUDIO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<?> uploadAudio(@RequestParam("file") MultipartFile multipartFile,
+//                                         @Valid @RequestParam("title") String title,
+//                                         @Valid @RequestParam("category") String category,
+//                                         @Valid @RequestParam("singer") String singerName) throws IOException, InterruptedException {
+//        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_AUDIO) {
+//            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
+//        }
+//        MediaResponseDto responseDto = mediaService.uploadAudio(multipartFile, title, category, singerName);
+//        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
+//    }
 
     @Operation(summary = "API Upload Multi Image")
     @PostMapping(value = UrlConstant.Media.UPLOAD_MULTI_MEDIA_IMAGE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -114,14 +114,5 @@ public class MediaController {
             return VsResponseUtil.success(HttpStatus.NO_CONTENT);
         }
         return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, ErrorMessage.ERR_EXCEPTION_GENERAL);
-    }
-
-    @PostMapping(UrlConstant.Media.UPLOAD_AVATAR)
-    public ResponseEntity<?> uploadAvatar(
-            @CurrentUser UserPrincipal principal,
-            @RequestPart("file") MultipartFile file) {
-
-        Media media = mediaService.uploadAvatar(principal, file);
-        return VsResponseUtil.success(mediaMapper.toMediaResponseDto(media));
     }
 }
