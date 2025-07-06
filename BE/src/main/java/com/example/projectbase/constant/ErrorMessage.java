@@ -35,18 +35,21 @@ public class ErrorMessage {
   }
 
   public static class Media {
-    public static final String ERR_NOT_FOUND_MEDIA = "exception.media.not.found";
+    public static final String ERR_NOT_FOUND_MEDIA = "exception.media.not.found.publicId";
     public static final String ERR_INVALID_MEDIA_TYPE = "exception.media.upload.invalid.format";
     public static final String ERR_MAX_SIZE_UPLOAD_VIDEO = "exception.media.upload.maxsize_video";
     public static final String ERR_MAX_SIZE_UPLOAD_AUDIO = "exception.media.upload.maxsize_audio";
     public static final String ERR_MAX_SIZE_UPLOAD_IMAGE = "exception.media.upload.maxsize_image";
     public static final String ERR_MAX_SIZE_REQUEST_MEDIA = "exception.media.upload.maxsize_media";
+    public static final String ERR_VIDEO_NOT_MULTIPLE_NOT_ALLOWED = "exception.video.multipleNotAllowed";
+    public static final String ERR_AUDIO_UPLOAD_FORMAT = "exception.audio.upload.format";
+
   }
 
   public static class Post {
     public static final String ERR_NOT_FOUND_ID = "exception.post.not.found.id";
-    public static final String ERR_INVALID_DATA = "exception.post.invalid_data";
-    public static final String ERR_SAVE_FAILED = "exception.post.save_failed";
+    public static final String ERR_FILES_NULL = "exception.files.null";
+    public static final String ERR_FILES_INVALID_FORMAT = "exception.files.invalid.format";
     public static final String ERR_DELETE_FAILED = "exception.post.delete_failed";
   }
 

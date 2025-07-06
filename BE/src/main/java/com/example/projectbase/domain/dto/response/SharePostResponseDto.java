@@ -13,6 +13,5 @@ public class SharePostResponseDto {
     private String title;
     private String content;
     private String createdBy;
-    private Long shareCount;
     private PostSummaryDto originalPost;
 }

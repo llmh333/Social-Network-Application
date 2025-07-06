@@ -1,5 +1,6 @@
 package com.example.projectbase.service.impl;
 
+import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
@@ -9,9 +10,11 @@ import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
 import com.example.projectbase.domain.entity.Post;
 import com.example.projectbase.domain.entity.Media;
+import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.PostMapper;
+import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
-import com.example.projectbase.exception.UnauthorizedException;
+import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.PostRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.MediaService;
@@ -22,14 +25,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,126 +36,67 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-@Transactional
+//@Transactional
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
+    private final MediaRepository mediaRepository;
     private final MediaService mediaService;
     private final PostMapper postMapper;
 
     @Override
-    public PostResponseDto createPostWithMultiImage(PostRequestDto dto, List<MultipartFile> images) {
-        final Post post = postRepository.save(buildPost(dto));
-        if (images != null && !images.isEmpty()) {
-            List<MediaResponseDto> dtos = mediaService.uploadMultiImage(images);
-            dtos.forEach(mediaDto -> saveMedia(post, mediaDto));
+    public PostResponseDto createPost(PostRequestDto requestDto, List<MultipartFile> files) throws IOException, InterruptedException {
+        if (files.get(0).isEmpty()) {
+            throw new BadRequestException(ErrorMessage.Post.ERR_FILES_NULL);
         }
-        return postMapper.toPostResponseDto(post);
-    }
 
-    @Override
-    public PostResponseDto createPostWithVideo(PostRequestDto dto, MultipartFile video) throws IOException, InterruptedException {
-        Post post = postRepository.save(buildPost(dto));
-        if (video != null && !video.isEmpty()) {
-            MediaResponseDto mediaDto = mediaService.uploadVideo(video);
-            saveMedia(post, mediaDto);
-        }
-        return postMapper.toPostResponseDto(post);
-    }
-
-    @Override
-    public PostResponseDto createPostWithAudio(PostRequestDto dto,
-                                               MultipartFile audio,
-                                               String audioTitle,
-                                               String category,
-                                               String singerName) {
-        Post post = postRepository.save(buildPost(dto));
-
-        if (audio != null && !audio.isEmpty()) {
-            validateAudioUploadRequest(audio, singerName, audioTitle);
-
-            try {
-                MediaResponseDto mediaDto = mediaService.uploadAudio(audio, audioTitle, category, singerName.trim());
-                saveMedia(post, mediaDto);
-            } catch (Exception e) {
-                log.error("Audio upload failed. Deleting post id: {}", post.getId(), e);
-                postRepository.delete(post);
-                throw new RuntimeException("Failed to upload audio: " + e.getMessage(), e);
+        if (requestDto.getMediaType() != null) {
+            String contentTypeMedia = files.get(0).getContentType().split("/")[0];
+            log.info("Content type Media: {}", contentTypeMedia);
+            if (!contentTypeMedia.equals(requestDto.getMediaType().toString().toLowerCase())) {
+                throw new BadRequestException(ErrorMessage.Post.ERR_FILES_INVALID_FORMAT);
             }
         }
 
+        Post post = postRepository.save(buildPostFromDto(requestDto));
+        processAndSaveMedia(post, requestDto, files);
+        log.info("Post created: {}", post.toString());
         return postMapper.toPostResponseDto(post);
+
     }
 
-    private void validateAudioUploadRequest(MultipartFile audio, String singerName, String audioTitle) {
-        if (audio != null && !audio.isEmpty()) {
-            if (singerName == null || singerName.trim().isEmpty()) {
-                throw new IllegalArgumentException("Singer name is required when uploading audio");
-            }
-            if (audioTitle == null || audioTitle.trim().isEmpty()) {
-                throw new IllegalArgumentException("Audio title is required when uploading audio");
-            }
+    private void processAndSaveMedia(Post post, PostRequestDto requestDto, List<MultipartFile> files) throws IOException, InterruptedException{
+        switch (requestDto.getMediaType()) {
+            case IMAGE:
+                List<MediaResponseDto> imageResponseDto = mediaService.uploadMultiImage(files);
+                imageResponseDto.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
+                break;
+            case VIDEO:
+                if (files.size() != 1) {
+                    throw new BadRequestException(ErrorMessage.Media.ERR_VIDEO_NOT_MULTIPLE_NOT_ALLOWED);
+                }
+
+                MediaResponseDto videoResponseDto = mediaService.uploadVideo(files.get(0));
+                saveMediaToPost(post, videoResponseDto);
+                break;
+            case AUDIO:
+                if (files.size() != 2) {
+                    throw new BadRequestException(ErrorMessage.Media.ERR_AUDIO_UPLOAD_FORMAT);
+                }
+
+                List<MediaResponseDto> audioResponseDto = mediaService.uploadAudio(files.get(0), files.get(1), requestDto.getTitle(), requestDto.getCategory(), requestDto.getSingerName());
+                audioResponseDto.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
+                break;
+            default:
         }
     }
 
-    @Override
-    public PostResponseDto updatePost(Long postId,
-                                      PostRequestDto dto,
-                                      MultipartFile image,
-                                      MultipartFile video,
-                                      MultipartFile audio,
-                                      String audioTitle,
-                                      String category,
-                                      String singerName,
-                                      List<MultipartFile> images) throws IOException, InterruptedException {
-        final Post post = findPostOrThrow(postId);
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
-
-        if (post.getMediaList() != null && !post.getMediaList().isEmpty()) {
-            List<String> publicIds = post.getMediaList().stream()
-                    .map(Media::getPublicId)
-                    .collect(Collectors.toList());
-            mediaService.deleteMedia(publicIds);
-            post.getMediaList().clear();
-        } else {
-            post.setMediaList(new ArrayList<>());
-        }
-
-        if (image != null && !image.isEmpty()) {
-            MediaResponseDto mediaDto = mediaService.uploadImage(image);
-            saveMedia(post, mediaDto);
-        }
-        if (video != null && !video.isEmpty()) {
-            MediaResponseDto mediaDto = mediaService.uploadVideo(video);
-            saveMedia(post, mediaDto);
-        }
-        if (audio != null && !audio.isEmpty()) {
-            MediaResponseDto mediaDto = mediaService.uploadAudio(
-                    audio,
-                    audioTitle, category, singerName
-            );
-            saveMedia(post, mediaDto);
-        }
-        if (images != null && !images.isEmpty()) {
-            final List<MediaResponseDto> dtos = mediaService.uploadMultiImage(images);
-            dtos.forEach(mediaDto -> saveMedia(post, mediaDto));
-        }
-        postRepository.save(post);
-        return postMapper.toPostResponseDto(post);
-    }
-
+    @Transactional
     @Override
     public void deletePost(Long postId) {
         Post post = findPostOrThrow(postId);
-        if (post.getMediaList() != null && !post.getMediaList().isEmpty()) {
-            List<String> publicIds = post.getMediaList().stream()
-                    .map(Media::getPublicId)
-                    .collect(Collectors.toList());
-            mediaService.deleteMedia(publicIds);
-        }
-        postRepository.deleteById(postId);
+        postRepository.delete(post);
     }
 
     @Override
@@ -172,7 +112,6 @@ public class PostServiceImpl implements PostService {
         Page<Post> postPage = (keyword != null && !keyword.isBlank())
                 ? postRepository.searchByTitleKeyword(keyword, pageable)
                 : postRepository.findAll(pageable);
-
         List<PostResponseDto> dtoList = postPage.stream()
                 .map(postMapper::toPostResponseDto)
                 .collect(Collectors.toList());
@@ -191,53 +130,44 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponseDto getPostById(Long postId) {
-        return postMapper.toPostResponseDto(findPostOrThrow(postId));
+        Post post = findPostOrThrow(postId);
+        PostResponseDto postResponseDto = postMapper.toPostResponseDto(post);
+        if (post.getOriginalPost() != null) {
+            postResponseDto.setOriginalPostId(post.getOriginalPost().getId());
+        }
+        log.info("List Media size: {}",  post.getMediaList().size());
+        return postResponseDto;
     }
 
-    private Post buildPost(PostRequestDto dto) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UnauthorizedException("User not authenticated");
-        }
-
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-
+    private Post buildPostFromDto(PostRequestDto requestDto) {
         return Post.builder()
-                .title(dto.getTitle())
-                .content(dto.getContent())
-                .createdBy(principal.getUsername())
+                .title(requestDto.getTitle())
+                .content(requestDto.getContent())
                 .reactionCount(0L)
                 .commentCount(0L)
+                .shareCount(0L)
+                .mediaType(requestDto.getMediaType())
                 .mediaList(new ArrayList<>())
                 .build();
     }
 
+    private void saveMediaToPost(Post post, MediaResponseDto dto) {
 
-
-    private void saveMedia(Post post, MediaResponseDto dto) {
         if (post.getMediaList() == null) {
             post.setMediaList(new ArrayList<>());
         }
 
-        Media media = Media.builder()
-                .publicId(dto.getPublicId())
-                .secureUrl(dto.getSecureUrl())
-                .resourceType(dto.getResourceType())
-                .format(dto.getFormat())
-                .dataSize(dto.getDataSize())
-                .title(dto.getTitle())
-                .category(dto.getCategory())
-                .thumbnailUrl(dto.getThumbnailUrl())
-                .height(dto.getHeight())
-                .width(dto.getWidth())
-                .post(post)
-                .build();
-
+        Media media = mediaRepository.findMediaByPublicId(dto.getPublicId());
+        if (media == null) {
+            throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{dto.getPublicId()});
+        }
+        media.setPost(post);
         post.getMediaList().add(media);
+        mediaRepository.save(media);
     }
 
     private Post findPostOrThrow(Long id) {
         return postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Post không tồn tại id=" + id));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(id)}));
     }
 }

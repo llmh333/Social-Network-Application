@@ -34,7 +34,7 @@ public class Media extends DateAuditing {
     @Column(name = "public_id")
     private String publicId;
 
-    @Column(name = "secret_url")
+    @Column(name = "secure_url")
     private String secureUrl;
 
     @Column(name = "playback_url")
@@ -70,7 +70,4 @@ public class Media extends DateAuditing {
     @Column(name = "status_upload")
     @Enumerated(EnumType.STRING)
     private UploadStatusConstant status;
-
-    @Column(name="type")
-    private String type;
 }

@@ -34,6 +34,8 @@ public class MediaResponseDto {
     private String resourceType;
     private Long dataSize;
     private String format;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String authorId;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

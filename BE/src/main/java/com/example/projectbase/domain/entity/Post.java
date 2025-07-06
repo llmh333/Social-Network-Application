@@ -1,5 +1,6 @@
 package com.example.projectbase.domain.entity;
 
+import com.example.projectbase.constant.MediaType;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
@@ -15,6 +16,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class Post extends DateAuditing {
 
     @Id
@@ -30,6 +32,9 @@ public class Post extends DateAuditing {
     @JoinColumn(name= "original_post_id")
     private Post originalPost;
 
+    @Column(name = "media_type",  nullable = false)
+    @Enumerated(EnumType.STRING)
+    private MediaType mediaType;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Media> mediaList = new ArrayList<>();
