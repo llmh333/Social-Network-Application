@@ -2,6 +2,8 @@ package com.example.projectbase.domain.dto.response;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,6 +13,7 @@ public class PostSummaryDto {
     private Long id;
     private String  title;
     private String content;
+    private List<MediaResponseDto> mediaList;
     private String createdBy;
     private Long shareCount;
 }

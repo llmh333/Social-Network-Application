@@ -12,6 +12,11 @@ import com.example.projectbase.service.PostService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.List;
 
@@ -32,60 +38,40 @@ import java.util.List;
 @RestApiV1
 @RequiredArgsConstructor
 @Validated
-@Tag(name = "API bài viết", description = "data = {'title': 'value', \n 'content': 'value'}")
+@Tag(name = "API bài viết")
 public class PostController {
 
     private final PostService postService;
-    private final ObjectMapper objectMapper;
 
-    @Operation(summary = "Tạo post kèm nhiều ảnh")
-    @PostMapping(path = UrlConstant.Post.CREATE_POST_MULTI_IMAGES, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPostWithMultiImage(
-            @RequestParam("data") String data,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) throws JsonProcessingException {
-        PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
-        PostResponseDto result = postService.createPostWithMultiImage(dto, images);
-        return VsResponseUtil.success(HttpStatus.CREATED, result);
-    }
+    @Operation(
+            summary = "Tạo bài viết mới (Nên test ở Postman, dưới đây chỉ là mô tả các dữ liệu đầu vào của api)",
+            description =
+                    "- `data`: thông tin bài viết dưới dạng JSON (application/json)\n" +
+                    "- `files`: danh sách file (chỉ 1 video, 1 audio hoặc nhiều ảnh)\n" +
+                    "- `audio`: Nếu upload audio thì audio phải ở đầu danh sách file, rồi đến 1 file image"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Tạo bài viết thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ"),
+            @ApiResponse(responseCode = "500", description = "Lỗi server")
+    })
+    @PostMapping(value = UrlConstant.Post.CREATE_NEW_POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createNewPost(
+            @Parameter(
+                    description = "Thông tin bài viết (JSON)",
+                    required = true,
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = PostRequestDto.class))
+            )
+            @Valid @RequestPart("data") PostRequestDto requestDto,
 
-    @Operation(summary = "Tạo post kèm 1 video")
-    @PostMapping(path = UrlConstant.Post.CREATE_POST_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPostWithVideo(
-            @RequestParam("data") String data,
-            @RequestPart(value = "video", required = false) MultipartFile video
-    ) throws IOException, InterruptedException {
-        PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
-        PostResponseDto result = postService.createPostWithVideo(dto, video);
-        return VsResponseUtil.success(HttpStatus.CREATED, result);
-    }
-
-    @Operation(summary = "Tạo post kèm 1 audio")
-    @PostMapping(path = UrlConstant.Post.CREATE_POST_AUDIO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPostWithAudio(
-            @RequestParam("data") String data,
-            @RequestPart(value = "audio", required = false) MultipartFile audio,
-            @RequestParam(value = "audioTitle", required = false, defaultValue = "") String audioTitle,
-            @RequestParam(value = "category", required = false, defaultValue = "") String category,
-            @RequestParam(value = "singerName", required = false, defaultValue = "") String singerName
-    ) {
-        try {
-            PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
-            PostResponseDto result = postService.createPostWithAudio(dto, audio, audioTitle, category, singerName);
-            return VsResponseUtil.success(HttpStatus.CREATED, result);
-        } catch (JsonProcessingException e) {
-            log.error("Invalid JSON data format", e);
-            return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Invalid data format");
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error: {}", e.getMessage());
-            return VsResponseUtil.error(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (MaxUploadSizeMediaException e) {
-            log.warn("File size exceeded: {}", e.getMessage());
-            return VsResponseUtil.error(HttpStatus.PAYLOAD_TOO_LARGE, e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error creating post with audio", e);
-            return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create post with audio");
-        }
+            @Parameter(
+                    description = "Danh sách file upload",
+                    required = true
+            )
+            @RequestPart("files") List<MultipartFile> files) throws IOException, InterruptedException {
+        PostResponseDto responseDto = postService.createPost(requestDto, files);
+        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
     @Operation(summary = "Lấy tất cả bài viết theo từ khóa tiêu đề (có phân trang)")
@@ -104,26 +90,6 @@ public class PostController {
         return VsResponseUtil.success(post);
     }
 
-    @Operation(summary = "Cập nhật bài viết, có thể thay đổi media")
-    @PutMapping(path = UrlConstant.Post.UPDATE_POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> updatePost(
-            @PathVariable("id") Long id,
-            @RequestParam("data") String data,
-            @RequestPart(value = "image", required = false) MultipartFile image,
-            @RequestPart(value = "video", required = false) MultipartFile video,
-            @RequestPart(value = "audio", required = false) MultipartFile audio,
-            @RequestParam(value = "audioTitle", required = false) String audioTitle,
-            @RequestParam(value = "category", required = false) String category,
-            @RequestParam(value = "singerName", required = false) String singerName,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) throws IOException, InterruptedException {
-        PostRequestDto dto = objectMapper.readValue(data, PostRequestDto.class);
-        PostResponseDto updated = postService.updatePost(
-                id, dto, image, video, audio,
-                audioTitle, category, singerName, images
-        );
-        return VsResponseUtil.success(updated);
-    }
 
     @Operation(summary = "Xóa bài viết theo ID")
     @DeleteMapping(path = UrlConstant.Post.DELETE_POST)

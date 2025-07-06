@@ -16,6 +16,7 @@ import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.MediaMapper;
+import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.InvalidException;
 import com.example.projectbase.exception.MaxUploadSizeMediaException;
 import com.example.projectbase.exception.NotFoundException;
@@ -215,11 +216,15 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public MediaResponseDto uploadAudio(MultipartFile multipartFile, String title, String category, String singerName) throws IOException, InterruptedException {
-        validateFile(multipartFile);
-        Media audioUpload = mediaPending(multipartFile,"audio");
+    public List<MediaResponseDto> uploadAudio(MultipartFile audioFile, MultipartFile thumbnailFile, String title, String category, String singerName) throws IOException, InterruptedException {
+        validateFile(audioFile);
+        validateFile(thumbnailFile);
+        List<MediaResponseDto> responseDtoList = new ArrayList<>();
+        MediaResponseDto thumbnailResult = uploadImage(thumbnailFile);
+        responseDtoList.add(thumbnailResult);
+        Media audioUpload = mediaPending(audioFile,"audio");
         MediaResponseDto mediaResponseDto =new MediaResponseDto();
-        File audioCompress = videoProcessingService.compressVideo(multipartFile);
+        File audioCompress = videoProcessingService.compressVideo(audioFile);
         try {
             Map<String, Object> metaData = ObjectUtils.asMap(
                     "resource_type", "video",
@@ -227,7 +232,14 @@ public class MediaServiceImpl implements MediaService {
                     "chunk_size", 7000000,
                     "eager_async", true,
                     "public_id", audioUpload.getPublicId(),
-                    "invalidate", true
+                    "invalidate", true,
+                    "eager", Arrays.asList(
+                            new Transformation()
+                                    .overlay(thumbnailResult.getPublicId())
+                                    .crop("fill")
+                                    .width("300")
+                                    .height("300")
+                    )
             );
             Map<String, Object> result = cloudinary.uploader().uploadLarge(audioCompress, metaData);
             log.info("result: {}", result);
@@ -242,12 +254,13 @@ public class MediaServiceImpl implements MediaService {
             Media savedMedia = mediaRepository.save(audioUpload);
             mediaResponseDto = mediaMapper.toMediaResponseDto(savedMedia);
             mediaResponseDto.setAuthorId(savedMedia.getUser().getId());
+            responseDtoList.add(mediaResponseDto);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             audioCompress.delete();
         }
-        return mediaResponseDto;
+        return responseDtoList;
     }
 
     @Transactional
@@ -265,7 +278,6 @@ public class MediaServiceImpl implements MediaService {
             throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(invalidPublicId)});
         }
         else if (invalidPublicId.isEmpty()) {
-            log.info("invalidId: {}", invalidPublicId.toString());
             mediaRepository.deleteAllByPublicIdIn(publicIdList);
             for (Media media : mediaList) {
                 Map<String, Object> metaData = ObjectUtils.asMap(
@@ -273,8 +285,17 @@ public class MediaServiceImpl implements MediaService {
                         "invalidated", true
                 );
                 try {
-                    Map<String, String> result = cloudinary.uploader().destroy(media.getPublicId(), metaData);
+                    String result = cloudinary.uploader().destroy(media.getPublicId(), metaData).toString();
+                    if (media.getResourceType().equals("audio")) {
+                        Map<String, Object> metaDataThumbnail = ObjectUtils.asMap(
+                                "resource_type", "image",
+                                "invalidated", true
+                        );
+                    }
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+//                    log.info();
                     e.printStackTrace();
                 }
             }
@@ -282,64 +303,6 @@ public class MediaServiceImpl implements MediaService {
             throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(invalidPublicId)});
         }
         return true;
-    }
-
-    @Override
-    public Media uploadAvatar(UserPrincipal principal, MultipartFile file) {
-        log.info("[UPLOAD AVATAR] User: {}", principal.getUsername());
-
-        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
-            throw new InvalidException(ErrorMessage.Media.ERR_INVALID_MEDIA_TYPE);
-        }
-        if (file.getSize() > MediaConstant.MAX_SIZE_IMAGE) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
-        }
-
-        User user = userRepository.findById(principal.getId())
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-
-        mediaRepository.findByUserAndType(user, "avatar").ifPresent(old -> {
-            try {
-                cloudinary.uploader().destroy(old.getPublicId(), ObjectUtils.emptyMap());
-                mediaRepository.delete(old);
-                log.info("[DELETE OLD AVATAR] {}", old.getPublicId());
-            } catch (IOException e) {
-                log.error("Failed to delete old avatar from cloudinary", e);
-            }
-        });
-
-        String publicId = "avatar/" + user.getId() + "_" + System.currentTimeMillis();
-
-
-        Map<String, Object> metaData = ObjectUtils.asMap(
-                "resource_type", "image",
-                "quality", "auto",
-                "fetch_format", "auto",
-                "public_id", publicId
-        );
-
-        try {
-            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), metaData);
-            log.info("[UPLOAD AVATAR RESULT] {}", result);
-
-            Media media = Media.builder()
-                    .publicId(result.get("public_id").toString())
-                    .secureUrl(result.get("secure_url").toString())
-                    .format(result.get("format").toString())
-                    .resourceType(result.get("resource_type").toString())
-                    .dataSize(file.getSize())
-                    .width(Long.valueOf((Integer) result.get("width")))
-                    .height(Long.valueOf((Integer) result.get("height")))
-                    .status(UploadStatusConstant.DONE)
-                    .type("avatar")
-                    .user(user)
-                    .build();
-
-            return mediaRepository.save(media);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload avatar", e);
-        }
     }
 
     private void validateFile(MultipartFile file) {
