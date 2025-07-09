@@ -1,6 +1,7 @@
 package com.example.projectbase.security.jwt;
 
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.exception.InvalidException;
 import io.jsonwebtoken.*;
@@ -102,6 +103,7 @@ public class JwtTokenProvider {
             log.error("Invalid JWT token");
         } catch (ExpiredJwtException ex) {
             log.error("Expired JWT token");
+            throw new UnauthorizedException("Expired JWT token");
         } catch (UnsupportedJwtException ex) {
             log.error("Unsupported JWT token");
         } catch (IllegalArgumentException ex) {
