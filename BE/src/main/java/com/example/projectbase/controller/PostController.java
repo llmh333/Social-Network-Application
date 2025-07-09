@@ -30,8 +30,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @RestController
@@ -69,8 +72,19 @@ public class PostController {
                     description = "Danh sách file upload",
                     required = true
             )
-            @RequestPart("files") List<MultipartFile> files) throws IOException, InterruptedException {
-        PostResponseDto responseDto = postService.createPost(requestDto, files);
+            @RequestPart("files") List<MultipartFile> files) throws IOException, InterruptedException, ExecutionException {
+        log.info("transfer To original File");
+        List<File> copiedFiles = new ArrayList<>();
+        List<String> contentTypeList = new ArrayList<>();
+        for (MultipartFile multipartFile : files) {
+            contentTypeList.add(multipartFile.getContentType());
+            File tempFile = File.createTempFile("upload_", multipartFile.getOriginalFilename());
+            multipartFile.transferTo(tempFile); // ⬅ chuyển dữ liệu sang file thật
+            copiedFiles.add(tempFile);
+        }
+
+        log.info("successfully transfer To original File");
+        PostResponseDto responseDto = postService.createPost(requestDto, copiedFiles, contentTypeList);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 

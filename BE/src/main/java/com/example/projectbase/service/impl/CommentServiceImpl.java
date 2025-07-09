@@ -153,6 +153,8 @@ public class CommentServiceImpl implements CommentService {
 
     private Comment createComment(String content, Post post, User user, Comment parent) {
         int level = (parent == null) ? 0 : parent.getCommentLevel() + 1;
+        post.setCommentCount(post.getCommentCount() + 1);
+        postRepository.save(post);
         try {
             return Comment.builder()
                     .content(content)

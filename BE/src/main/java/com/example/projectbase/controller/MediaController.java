@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @RestApiV1
@@ -52,15 +53,15 @@ public class MediaController {
     private final MediaRepository mediaRepository;
     private final MediaMapper mediaMapper;
 
-    @Operation(summary = "API Upload Video")
-    @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadVideo(@RequestPart("file") MultipartFile multipartFile) throws IOException, InterruptedException {
-        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
-        }
-        MediaResponseDto responseDto = mediaService.uploadVideo(multipartFile);
-        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
-    }
+//    @Operation(summary = "API Upload Video")
+//    @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<?> uploadVideo(@RequestPart("file") MultipartFile multipartFile) throws IOException, InterruptedException, ExecutionException {
+//        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
+//            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
+//        }
+//        MediaResponseDto responseDto = mediaService.uploadVideo(multipartFile);
+//        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
+//    }
 
 //    @Operation(summary = "API Upload Audio")
 //    @PostMapping(value =UrlConstant.Media.UPLOAD_MEDIA_AUDIO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -75,12 +76,12 @@ public class MediaController {
 //        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
 //    }
 
-    @Operation(summary = "API Upload Multi Image")
-    @PostMapping(value = UrlConstant.Media.UPLOAD_MULTI_MEDIA_IMAGE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadMultiImage(@RequestParam("file") List<MultipartFile> file) {
-        List<MediaResponseDto> mediaResponseDtos = mediaService.uploadMultiImage(file);
-        return VsResponseUtil.success(HttpStatus.CREATED, mediaResponseDtos);
-    }
+//    @Operation(summary = "API Upload Multi Image")
+//    @PostMapping(value = UrlConstant.Media.UPLOAD_MULTI_MEDIA_IMAGE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<?> uploadMultiImage(@RequestParam("file") List<MultipartFile> file) {
+//        List<MediaResponseDto> mediaResponseDtos = mediaService.uploadMultiImage(file);
+//        return VsResponseUtil.success(HttpStatus.CREATED, mediaResponseDtos);
+//    }
 
     @Operation(summary = "API Get Media")
     @GetMapping(UrlConstant.Media.GET_MEDIA_BY_RESOURCE_TYPE)
