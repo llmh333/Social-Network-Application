@@ -19,19 +19,24 @@ import com.example.projectbase.repository.PostRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.PostService;
+import com.example.projectbase.util.MediaProcessingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -43,16 +48,19 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final MediaRepository mediaRepository;
     private final MediaService mediaService;
+    private final VideoProcessingService videoProcessingService;
+    private final AudioProcessingService audioProcessingService;
+    private final ImageProcessingService imageProcessingService;
     private final PostMapper postMapper;
 
     @Override
-    public PostResponseDto createPost(PostRequestDto requestDto, List<MultipartFile> files) throws IOException, InterruptedException {
-        if (files.get(0).isEmpty()) {
+    public PostResponseDto createPost(PostRequestDto requestDto, List<File> files, List<String> contentTypeFileList) {
+        if (!files.get(0).isFile()) {
             throw new BadRequestException(ErrorMessage.Post.ERR_FILES_NULL);
         }
 
         if (requestDto.getMediaType() != null) {
-            String contentTypeMedia = files.get(0).getContentType().split("/")[0];
+            String contentTypeMedia = contentTypeFileList.get(0).split("/")[0];
             log.info("Content type Media: {}", contentTypeMedia);
             if (!contentTypeMedia.equals(requestDto.getMediaType().toString().toLowerCase())) {
                 throw new BadRequestException(ErrorMessage.Post.ERR_FILES_INVALID_FORMAT);
@@ -60,37 +68,42 @@ public class PostServiceImpl implements PostService {
         }
 
         Post post = postRepository.save(buildPostFromDto(requestDto));
-        processAndSaveMedia(post, requestDto, files);
+        processAndSaveMediaAsync(post, requestDto, files, contentTypeFileList);
         log.info("Post created: {}", post.toString());
         return postMapper.toPostResponseDto(post);
 
     }
 
-    private void processAndSaveMedia(Post post, PostRequestDto requestDto, List<MultipartFile> files) throws IOException, InterruptedException{
+    public CompletableFuture<Void> processAndSaveMediaAsync(Post post, PostRequestDto requestDto, List<File> files, List<String> contentTypeFileList) {
         switch (requestDto.getMediaType()) {
             case IMAGE:
-                List<MediaResponseDto> imageResponseDto = mediaService.uploadMultiImage(files);
-                imageResponseDto.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
-                break;
+                return imageProcessingService.uploadMultipleImages(files, contentTypeFileList)
+                        .thenAccept(imageResponseDtos -> {
+                            imageResponseDtos.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
+                        });
             case VIDEO:
                 if (files.size() != 1) {
                     throw new BadRequestException(ErrorMessage.Media.ERR_VIDEO_NOT_MULTIPLE_NOT_ALLOWED);
                 }
 
-                MediaResponseDto videoResponseDto = mediaService.uploadVideo(files.get(0));
-                saveMediaToPost(post, videoResponseDto);
-                break;
+                return videoProcessingService.uploadVideo(files.get(0), contentTypeFileList.get(0)).thenAccept(dto -> saveMediaToPost(post, dto));
             case AUDIO:
                 if (files.size() != 2) {
                     throw new BadRequestException(ErrorMessage.Media.ERR_AUDIO_UPLOAD_FORMAT);
                 }
 
-                List<MediaResponseDto> audioResponseDto = mediaService.uploadAudio(files.get(0), files.get(1), requestDto.getTitle(), requestDto.getCategory(), requestDto.getSingerName());
-                audioResponseDto.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
-                break;
+                return audioProcessingService.uploadAudio(files.get(0), files.get(1), contentTypeFileList, requestDto.getTitle(), requestDto.getSingerName(), requestDto.getCategory())
+                        .thenAccept(audioResponseDtos -> {
+                            audioResponseDtos.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
+                        }
+                );
             default:
+                return CompletableFuture.completedFuture(null);
         }
     }
+
+
+
 
     @Transactional
     @Override

@@ -1,9 +1,18 @@
 package com.example.projectbase.security.jwt;
 
+import com.example.projectbase.base.RestData;
+import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.service.CustomUserDetailsService;
+import com.example.projectbase.util.BeanUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,7 +48,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
-        } catch (Exception ex) {
+        } catch (UnauthorizedException e) {
+            MessageSource messageSource = BeanUtil.getBean(MessageSource.class);
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            String message = messageSource.getMessage(ErrorMessage.UNAUTHORIZED, null, LocaleContextHolder.getLocale());
+            response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(message)));
+            return;
+        }
+        catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
         }
         filterChain.doFilter(request, response);

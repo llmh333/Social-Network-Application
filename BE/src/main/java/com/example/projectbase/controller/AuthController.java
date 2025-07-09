@@ -2,6 +2,7 @@ package com.example.projectbase.controller;
 
 import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
+import com.example.projectbase.constant.GenderConstant;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
@@ -29,6 +30,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,6 +44,21 @@ public class AuthController {
 
   private final AuthService authService;
 
+  @PostMapping("/auth/testregis")
+  public String auto() {
+    for (int i = 0; i < 100; i++) {
+      RegisterRequestDto registerRequestDto = new RegisterRequestDto();
+      registerRequestDto.setUsername("admmin" + String.valueOf(i));
+      registerRequestDto.setPassword("lehieu283@");
+      registerRequestDto.setDob(LocalDate.now());
+      registerRequestDto.setFirstName("user" + String.valueOf(i));
+      registerRequestDto.setLastName("test");
+      registerRequestDto.setEmail("user"+String.valueOf(i)+"@gmail.com");
+      registerRequestDto.setGender(GenderConstant.UNKNOWN);
+      authService.register(registerRequestDto);
+    }
+    return "ok";
+  }
   @Operation(summary = "API Đăng ký tài khoản")
   @PostMapping(UrlConstant.Auth.REGISTER)
   public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto req) {
