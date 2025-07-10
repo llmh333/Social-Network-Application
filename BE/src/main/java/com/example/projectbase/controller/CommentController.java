@@ -2,9 +2,10 @@ package com.example.projectbase.controller;
 
 import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
+import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.CommentRequestDto;
-import com.example.projectbase.domain.dto.request.ReplyRequestDto;
+import com.example.projectbase.domain.dto.request.ReplyCommentRequestDto;
 import com.example.projectbase.domain.dto.response.CommentResponseDto;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.service.CommentService;
@@ -37,21 +38,18 @@ public class CommentController {
     @Operation(summary = "Thêm bình luận cho bài viết")
     @PostMapping(UrlConstant.Comment.ADD_COMMENT)
     public ResponseEntity<?> addComment(
-            @PathVariable("postId") Long postId,
-            @Valid @RequestBody CommentRequestDto dto,
+            @RequestBody @Valid CommentRequestDto requestDto,
             Principal principal) {
-        CommentResponseDto created = commentService.addComment(postId, dto, principal.getName());
+        CommentResponseDto created = commentService.addComment(requestDto, principal.getName());
         return VsResponseUtil.success(HttpStatus.CREATED, created);
     }
 
     @Operation(summary = "Trả lời bình luận")
     @PostMapping(UrlConstant.Comment.REPLY_COMMENT)
     public ResponseEntity<?> replyToComment(
-            @PathVariable("postId") Long postId,
-            @PathVariable("parentCommentId") Long parentId,
-            @Valid @RequestBody ReplyRequestDto dto,
+            @Valid @RequestBody ReplyCommentRequestDto requestDto,
             Principal principal) {
-        CommentResponseDto reply = commentService.replyToComment(postId, parentId, dto, principal.getName());
+        CommentResponseDto reply = commentService.replyToComment(requestDto, principal.getName());
         return VsResponseUtil.success(HttpStatus.CREATED, reply);
     }
 
@@ -69,11 +67,8 @@ public class CommentController {
     public ResponseEntity<?> getCommentWithReplies(
             @PathVariable("postId") Long postId,
             @PathVariable("commentId") Long commentId) {
-        Optional<CommentResponseDto> comment = commentService.getCommentWithReplies(commentId);
-        if (comment.isEmpty()) {
-            throw new NotFoundException("Comment not found");
-        }
-        return VsResponseUtil.success(comment.get());
+        CommentResponseDto responseDto = commentService.getCommentWithReplies(commentId);
+        return VsResponseUtil.success(responseDto);
     }
 
     @Operation(summary = "Lấy các phản hồi (replies) của một bình luận gốc")
@@ -85,12 +80,11 @@ public class CommentController {
 
     @Operation(summary = "Cập nhật bình luận")
     @PutMapping(UrlConstant.Comment.UPDATE_COMMENT)
-    public ResponseEntity<?> updateComment(
-            @PathVariable("postId") Long postId,
-            @PathVariable("commentId") Long commentId,
-            @Valid @RequestBody CommentRequestDto dto,
-            Principal principal) {
-        CommentResponseDto updated = commentService.updateComment(postId, commentId, dto, principal.getName());
+    public ResponseEntity<?> updateComment(@RequestParam("commentId") Long commentId,
+                                           @RequestParam("content") String content,
+                                           @RequestParam("postId") Long postId,
+                                           Principal principal) {
+        CommentResponseDto updated = commentService.updateComment(commentId, content, postId, principal.getName());
         return VsResponseUtil.success(updated);
     }
 
@@ -101,7 +95,7 @@ public class CommentController {
             @PathVariable("commentId") Long commentId,
             Principal principal) {
         commentService.deleteComment(postId, commentId, principal.getName());
-        return VsResponseUtil.success(HttpStatus.NO_CONTENT, null);
+        return VsResponseUtil.success(HttpStatus.NO_CONTENT);
     }
 
 }

@@ -16,7 +16,7 @@ public class CommentResponseDto {
     private Long parentCommentId;
     private UserSummaryDto author;
     private List<CommentResponseDto> replies;
-    private Long replyCount;
+    private int replyCount;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime lastModifiedAt;
 }
