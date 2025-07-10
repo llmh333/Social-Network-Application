@@ -26,6 +26,9 @@ public class ErrorMessage {
     public static final String ERR_ACCOUNT_LOCKED = "exception.auth.account.locked";
     public static final String INVALID_REFRESH_TOKEN = "exception.auth.invalid.refresh.token";
     public static final String EXPIRED_REFRESH_TOKEN = "exception.auth.expired.refresh.token";
+    public static final String ERR_ALREADY_EXISTS_USERNAME = "exception.auth.already.exists.username";
+    public static final String ERR_ALREADY_EXISTS_EMAIL = "exception.auth.already.exists.email";
+    public static final String ERR_REFRESH_TOKEN = "exception.auth.refresh.token.error";
   }
 
   public static class User {
@@ -48,6 +51,7 @@ public class ErrorMessage {
 
   public static class Post {
     public static final String ERR_NOT_FOUND_ID = "exception.post.not.found.id";
+    public static final String ERR_NOT_FOUND_ORIGINAL_POST = "exception.post.not.found.original";
     public static final String ERR_FILES_NULL = "exception.files.null";
     public static final String ERR_FILES_INVALID_FORMAT = "exception.files.invalid.format";
   }
@@ -76,6 +80,7 @@ public class ErrorMessage {
     public static final String ERR_CHANGE_PASSWORD_EXPIRED = "exception.changed.password.confirm.expired";
     public static final String ERR_PASSWORD_NOT_MATCHED = "exception.changed.password.not.match";
     public static final String ERR_DELAY_GET_OTP = "exception.otp.delay.get";
+    public static final String ERR_OLD_PASSWORD_INCORRECT = "exception.changed.password.old.password.incorrect";
   }
 
   public static class Comment {
@@ -83,5 +88,9 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_COMMENT_IN_POST = "exception.comment.not.found.in.post";
     public static final String ERR_PARENT_COMMENT_NOT_FOUND = "exception.comment.parent.comment.not.found";
     public static final String ERR_NOT_HAVE_PERMISSION = "exception.comment.not.have.permission";
+  }
+
+  public static class Role{
+    public static final String ERR_NOT_FOUND = "exception.role.not.found";
   }
 }

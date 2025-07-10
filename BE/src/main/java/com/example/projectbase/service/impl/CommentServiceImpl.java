@@ -1,6 +1,7 @@
 package com.example.projectbase.service.impl;
 
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.constant.RoleConstant;
 import com.example.projectbase.domain.dto.request.CommentRequestDto;
 import com.example.projectbase.domain.dto.request.ReplyCommentRequestDto;
 import com.example.projectbase.domain.dto.response.CommentResponseDto;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final UserMapper userMapper;
 
+    @PreAuthorize("#username == authentication.principal.username")
     @Override
     @Transactional
     public CommentResponseDto addComment(CommentRequestDto requestDto, String username) {
@@ -59,6 +62,7 @@ public class CommentServiceImpl implements CommentService {
         return commentResponseDto;
     }
 
+    @PreAuthorize("#username == authentication.principal.username")
     @Override
     @Transactional
     public CommentResponseDto replyToComment(ReplyCommentRequestDto requestDto, String username) {
@@ -85,7 +89,7 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentResponseDto(savedReply);
     }
 
-
+    @PreAuthorize("#username == authentication.principal.username")
     @Override
     @Transactional
     public CommentResponseDto updateComment(Long commentId, String content, Long postId, String username) {
@@ -104,6 +108,7 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentResponseDto(updatedComment);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional
     public void deleteComment(Long postId, Long commentId, String username) {
@@ -117,6 +122,7 @@ public class CommentServiceImpl implements CommentService {
         log.debug("Comment {} hard deleted", commentId);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional(readOnly = true)
     public Page<CommentResponseDto> getCommentsByPost(Long postId, Pageable pageable) {
@@ -129,6 +135,7 @@ public class CommentServiceImpl implements CommentService {
                 });
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional(readOnly = true)
     public List<CommentResponseDto> getRepliesByParentId(Long parentId) {
@@ -139,6 +146,7 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional(readOnly = true)
     public CommentResponseDto getCommentWithReplies(Long commentId) {
@@ -177,11 +185,15 @@ public class CommentServiceImpl implements CommentService {
     }
 
     private void validateCommentOwnership(Comment comment, Long postId, String username) {
-        if (!comment.getPost().getId().equals(postId)) {
-            throw new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_COMMENT_IN_POST, new String[]{String.valueOf(comment.getId())});
-        }
-        if (!comment.getUser().getUsername().equals(username)) {
-            throw new UnauthorizedException(ErrorMessage.Comment.ERR_NOT_HAVE_PERMISSION);
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
+        if (!currentUser.getRole().getName().equals(RoleConstant.ADMIN)) {
+            if (!comment.getPost().getId().equals(postId)) {
+                throw new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_COMMENT_IN_POST, new String[]{String.valueOf(comment.getId())});
+            }
+            if (!comment.getUser().getUsername().equals(username)) {
+                throw new UnauthorizedException(ErrorMessage.Comment.ERR_NOT_HAVE_PERMISSION);
+            }
         }
     }
 }

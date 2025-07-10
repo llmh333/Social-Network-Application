@@ -44,21 +44,6 @@ public class AuthController {
 
   private final AuthService authService;
 
-  @PostMapping("/auth/testregis")
-  public String auto() {
-    for (int i = 0; i < 100; i++) {
-      RegisterRequestDto registerRequestDto = new RegisterRequestDto();
-      registerRequestDto.setUsername("admmin" + String.valueOf(i));
-      registerRequestDto.setPassword("lehieu283@");
-      registerRequestDto.setDob(LocalDate.now());
-      registerRequestDto.setFirstName("user" + String.valueOf(i));
-      registerRequestDto.setLastName("test");
-      registerRequestDto.setEmail("user"+String.valueOf(i)+"@gmail.com");
-      registerRequestDto.setGender(GenderConstant.UNKNOWN);
-      authService.register(registerRequestDto);
-    }
-    return "ok";
-  }
   @Operation(summary = "API Đăng ký tài khoản")
   @PostMapping(UrlConstant.Auth.REGISTER)
   public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto req) {
@@ -78,13 +63,6 @@ public class AuthController {
   public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
     return VsResponseUtil.success(authService.login(request));
   }
-
-  @Operation(summary = "API test")
-  @PostMapping("auth/test")
-  public String login(@ValidFileImage MultipartFile multipartFile) {
-    return multipartFile.getContentType();
-  }
-
 
   @Operation(
           summary = "API Logout",

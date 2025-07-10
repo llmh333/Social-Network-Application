@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,7 @@ public class ReactionServiceImpl implements ReactionService {
     private final ReactionMapper reactionMapper;
     private final UserRepository userRepository;
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public ReactionResponseDto reactionForPost(ReactionRequestDto request, Long postId) {
 
@@ -82,6 +84,7 @@ public class ReactionServiceImpl implements ReactionService {
         return responseDto;
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public boolean cancelReaction(Long postId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -89,7 +92,6 @@ public class ReactionServiceImpl implements ReactionService {
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         long response = reactionRepository.deleteByUserIdAndPostId(userPrincipal.getId(), postId);
 
-        System.out.println(response);
         if (response == 0) {
             throw new NotFoundException(ErrorMessage.Reaction.ERR_NOT_FOUND);
         }
@@ -98,6 +100,7 @@ public class ReactionServiceImpl implements ReactionService {
         return true;
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public PaginationResponseDto getReactionsOfPost(PaginationRequestDto paginationRequestDto, Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(

@@ -9,6 +9,8 @@ import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 import com.example.projectbase.domain.entity.User;
+import com.example.projectbase.exception.ConflictException;
+import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
@@ -48,10 +50,10 @@ public class AuthServiceImpl implements AuthService {
   public LoginResponseDto register(RegisterRequestDto req) {
     try {
       if (userRepository.existsByUsername(req.getUsername())) {
-          throw new RuntimeException("Username đã tồn tại");
+          throw new ConflictException(ErrorMessage.Auth.ERR_ALREADY_EXISTS_USERNAME);
       }
       if (userRepository.existsByEmail(req.getEmail())) {
-          throw new RuntimeException("Email đã được đăng ký");
+          throw new ConflictException(ErrorMessage.Auth.ERR_ALREADY_EXISTS_EMAIL);
       }
 
       User user = new User();
@@ -63,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
       user.setDob(req.getDob());
       user.setGender(req.getGender());
       user.setRole( roleRepository.findByName(RoleConstant.USER)
-              .orElseThrow(() -> new RuntimeException("ROLE_USER not found"))
+              .orElseThrow(() -> new NotFoundException(ErrorMessage.Role.ERR_NOT_FOUND, new String[]{RoleConstant.USER}))
       );
       userRepository.save(user);
       UserPrincipal principal = UserPrincipal.create(user);
@@ -111,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
     String refreshToken = request.getRefreshToken();
     if (!StringUtils.hasText(refreshToken)) {
       logger.error("Empty refresh token");
-      throw new UnauthorizedException("Refresh token is required");
+      throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
     }
 
     try {
@@ -124,11 +126,11 @@ public class AuthServiceImpl implements AuthService {
         return new TokenRefreshResponseDto(newAccessToken, newRefreshToken);
       } else {
         logger.error("Invalid or expired refresh token: {}", refreshToken);
-        throw new UnauthorizedException("Invalid or expired refresh token");
+        throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
       }
     } catch (Exception e) {
       logger.error("Error processing refresh token: {}", refreshToken, e);
-      throw new UnauthorizedException("Failed to refresh token: " + e.getMessage());
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_REFRESH_TOKEN);
     }
   }
 
