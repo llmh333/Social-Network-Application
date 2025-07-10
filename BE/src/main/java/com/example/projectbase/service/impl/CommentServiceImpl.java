@@ -1,12 +1,14 @@
 package com.example.projectbase.service.impl;
 
+import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.domain.dto.request.CommentRequestDto;
-import com.example.projectbase.domain.dto.request.ReplyRequestDto;
+import com.example.projectbase.domain.dto.request.ReplyCommentRequestDto;
 import com.example.projectbase.domain.dto.response.CommentResponseDto;
 import com.example.projectbase.domain.entity.Comment;
 import com.example.projectbase.domain.entity.Post;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.CommentMapper;
+import com.example.projectbase.domain.mapper.UserMapper;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.repository.CommentRepository;
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,49 +35,52 @@ public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
-    public CommentResponseDto addComment(Long postId, CommentRequestDto dto, String username) {
-        log.debug("Adding comment to post {} by user {}", postId, username);
+    public CommentResponseDto addComment(CommentRequestDto requestDto, String username) {
+
+        Long postId = requestDto.getPostId();
+        log.info("Adding comment to post {} by user {}", postId, username);
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new NotFoundException("Post not found with id: " + postId));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not found: " + username));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(username)}));
 
-        Comment comment = createComment(dto.getContent(), post, user, null);
+        Comment comment = createComment(requestDto.getContent(), post, user, null);
 
         Comment savedComment = commentRepository.save(comment);
-        log.debug("Comment created with id: {}", savedComment.getId());
 
-        return commentMapper.toCommentResponseDto(savedComment);
+        log.info("Comment created with id: {}", savedComment.getId());
+
+        CommentResponseDto commentResponseDto = commentMapper.toCommentResponseDto(savedComment);
+        return commentResponseDto;
     }
 
     @Override
     @Transactional
-    public CommentResponseDto replyToComment(Long postId, Long parentId, ReplyRequestDto dto, String username) {
-        log.debug("Adding reply to comment {} on post {} by user {}", parentId, postId, username);
+    public CommentResponseDto replyToComment(ReplyCommentRequestDto requestDto, String username) {
+        Long postId = requestDto.getPostId();
+        Long parentId = requestDto.getParentId();
+        log.info("Adding reply to comment {} on post {} by user {}", parentId, postId, username);
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new NotFoundException("Post not found with id: " + postId));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not found: " + username));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
         Comment parent = commentRepository.findById(parentId)
-                .orElseThrow(() -> new NotFoundException("Parent comment not found with id: " + parentId));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Comment.ERR_PARENT_COMMENT_NOT_FOUND, new String[]{String.valueOf(parentId)}));
 
         if (!parent.getPost().getId().equals(postId)) {
-            throw new NotFoundException("Parent comment does not belong to this post");
+            throw new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_COMMENT_IN_POST, new String[]{String.valueOf(parent.getId()), String.valueOf(post.getId())});
         }
 
-        if (parent.getCommentLevel() >= 1) {
-            throw new IllegalArgumentException("Chỉ cho phép trả lời bình luận gốc (tối đa 2 cấp).");
-        }
-
-        Comment reply = createComment(dto.getContent(), post, user, parent);
-
+        Comment reply = createComment(requestDto.getContent(), post, user, parent);
         Comment savedReply = commentRepository.save(reply);
-        log.debug("Reply created with id: {}", savedReply.getId());
+
+        log.info("Reply created with id: {}", savedReply.getId());
 
         return commentMapper.toCommentResponseDto(savedReply);
     }
@@ -82,13 +88,16 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentResponseDto updateComment(Long postId, Long commentId, CommentRequestDto dto, String username) {
+    public CommentResponseDto updateComment(Long commentId, String content, Long postId, String username) {
         log.debug("Updating comment {} on post {} by user {}", commentId, postId, username);
 
-        Comment comment = findCommentWithUserAndPost(commentId);
+        Comment comment = commentRepository.findById(commentId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_ID, new String[]{String.valueOf(commentId)})
+        );
+
         validateCommentOwnership(comment, postId, username);
 
-        comment.setContent(dto.getContent());
+        comment.setContent(content);
         Comment updatedComment = commentRepository.save(comment);
 
         log.debug("Comment {} updated successfully", commentId);
@@ -98,20 +107,14 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void deleteComment(Long postId, Long commentId, String username) {
+
         log.debug("Deleting comment {} on post {} by user {}", commentId, postId, username);
 
-        Comment comment = findCommentWithUserAndPost(commentId);
+        Comment comment = findCommentWithId(commentId);
         validateCommentOwnership(comment, postId, username);
+        commentRepository.delete(comment);
 
-        long replyCount = commentRepository.countByParentId(commentId);
-        if (replyCount > 0) {
-            comment.setContent("[Bình luận đã bị xóa]");
-            commentRepository.save(comment);
-            log.debug("Comment {} soft deleted (has {} replies)", commentId, replyCount);
-        } else {
-            commentRepository.delete(comment);
-            log.debug("Comment {} hard deleted", commentId);
-        }
+        log.debug("Comment {} hard deleted", commentId);
     }
 
     @Override
@@ -121,7 +124,7 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findParentCommentsByPostId(postId, pageable)
                 .map(comment -> {
                     CommentResponseDto dto = commentMapper.toCommentResponseDto(comment);
-                    dto.setReplyCount(commentRepository.countByParentId(comment.getId()));
+                    dto.setReplyCount(comment.getReplies().size());
                     return dto;
                 });
     }
@@ -138,56 +141,47 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<CommentResponseDto> getCommentWithReplies(Long commentId) {
-        return commentRepository.findByIdAndParentIsNull(commentId)
-                .map(comment -> {
-                    CommentResponseDto dto = commentMapper.toCommentResponseDto(comment);
-                    List<CommentResponseDto> replies = commentRepository.findByParentIdOrderByCreatedAtAsc(comment.getId())
-                            .stream()
-                            .map(commentMapper::toCommentResponseDto)
-                            .toList();
-                    dto.setReplies(replies);
-                    return dto;
-                });
+    public CommentResponseDto getCommentWithReplies(Long commentId) {
+        log.info("Getting comment with replies for comment {}", commentId);
+        Comment comment = commentRepository.findById(commentId).orElseThrow(
+                () -> new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_ID, new String[]{String.valueOf(commentId)})
+        );
+        CommentResponseDto dto = commentMapper.toCommentResponseDto(comment);
+        log.info("Found comment with replies: {}", dto);
+        return dto;
     }
 
     private Comment createComment(String content, Post post, User user, Comment parent) {
         int level = (parent == null) ? 0 : parent.getCommentLevel() + 1;
+
+        Comment newComment = Comment.builder()
+                .commentLevel(level)
+                .content(content)
+                .user(user)
+                .parent(parent)
+                .post(post)
+                .replies(new ArrayList<>())
+                .build();
+
         post.setCommentCount(post.getCommentCount() + 1);
+        post.getComments().add(newComment);
         postRepository.save(post);
-        try {
-            return Comment.builder()
-                    .content(content)
-                    .post(post)
-                    .user(user)
-                    .parent(parent)
-                    .commentLevel(level)
-                    .build();
-        } catch (Exception e) {
-            Comment comment = new Comment();
-            comment.setContent(content);
-            comment.setPost(post);
-            comment.setUser(user);
-            comment.setParent(parent);
-            comment.setCommentLevel(level);
-            return comment;
-        }
+
+        return commentRepository.save(newComment);
     }
 
-    private Comment findCommentWithUserAndPost(Long commentId) {
-        Optional<Comment> comment = commentRepository.findByIdWithUserAndPost(commentId);
-        if (comment.isEmpty()) {
-            comment = commentRepository.findById(commentId);
-        }
-        return comment.orElseThrow(() -> new NotFoundException("Comment not found with id: " + commentId));
+    private Comment findCommentWithId(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(commentId)}));
+        return comment;
     }
 
     private void validateCommentOwnership(Comment comment, Long postId, String username) {
         if (!comment.getPost().getId().equals(postId)) {
-            throw new NotFoundException("Comment does not belong to this post");
+            throw new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_COMMENT_IN_POST, new String[]{String.valueOf(comment.getId())});
         }
         if (!comment.getUser().getUsername().equals(username)) {
-            throw new UnauthorizedException("You are not authorized to modify this comment");
+            throw new UnauthorizedException(ErrorMessage.Comment.ERR_NOT_HAVE_PERMISSION);
         }
     }
 }

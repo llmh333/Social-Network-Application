@@ -1,22 +1,27 @@
 package com.example.projectbase.domain.dto.request;
 
 import com.example.projectbase.constant.ErrorMessage;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-@Getter
-@Setter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentRequestDto {
-
-    @NotBlank(message = ErrorMessage.NOT_BLANK_FIELD)
-    private String content;
+public class ReplyCommentRequestDto {
 
     @NotNull(message = ErrorMessage.NOT_BLANK_FIELD)
     private Long postId;
+
+    @NotNull(message = ErrorMessage.NOT_BLANK_FIELD)
+    private Long parentId;
+
+    @NotBlank(message = ErrorMessage.NOT_BLANK_FIELD)
+    private String content;
 
 }

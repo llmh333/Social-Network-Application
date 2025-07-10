@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<RestData<?>> handlerNotFoundException(NotFoundException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.warn(message, ex);
+    log.warn(message);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 

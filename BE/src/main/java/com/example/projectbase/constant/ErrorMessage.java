@@ -50,7 +50,6 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_ID = "exception.post.not.found.id";
     public static final String ERR_FILES_NULL = "exception.files.null";
     public static final String ERR_FILES_INVALID_FORMAT = "exception.files.invalid.format";
-    public static final String ERR_DELETE_FAILED = "exception.post.delete_failed";
   }
 
   public static class Reaction {
@@ -77,5 +76,12 @@ public class ErrorMessage {
     public static final String ERR_CHANGE_PASSWORD_EXPIRED = "exception.changed.password.confirm.expired";
     public static final String ERR_PASSWORD_NOT_MATCHED = "exception.changed.password.not.match";
     public static final String ERR_DELAY_GET_OTP = "exception.otp.delay.get";
+  }
+
+  public static class Comment {
+    public static final String ERR_NOT_FOUND_ID = "exception.comment.not.found.id";
+    public static final String ERR_NOT_FOUND_COMMENT_IN_POST = "exception.comment.not.found.in.post";
+    public static final String ERR_PARENT_COMMENT_NOT_FOUND = "exception.comment.parent.comment.not.found";
+    public static final String ERR_NOT_HAVE_PERMISSION = "exception.comment.not.have.permission";
   }
 }
