@@ -1,6 +1,7 @@
 package com.example.projectbase.service.impl;
 
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.constant.RoleConstant;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
@@ -12,6 +13,7 @@ import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.domain.entity.Role;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.UserMapper;
+import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
@@ -23,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,6 +45,7 @@ public class UserServiceImpl implements UserService {
 
   private final PasswordEncoder passwordEncoder;
 
+  @PreAuthorize("isAuthenticated() or hasRole('ADMIN')")
   @Override
   public UserResponseDto getUserById(String userId) {
     User user = userRepository.findById(userId)
@@ -49,6 +53,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toUserDto(user);
   }
 
+  @PreAuthorize("isAuthenticated() or hasRole('ADMIN')")
   @Override
   public UserResponseDto getCurrentUser(UserPrincipal principal) {
     User user = userRepository.getUser(principal);
@@ -59,11 +64,12 @@ public class UserServiceImpl implements UserService {
   public UserResponseDto createUser(UserCreateDto dto) {
     User user = userMapper.toUser(dto);
     Role role = roleRepository.findByRoleName("USER")
-            .orElseThrow(() -> new RuntimeException("Default role not found"));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.Role.ERR_NOT_FOUND, new String[]{RoleConstant.USER.toString()}));
     user.setRole(role);
     return userMapper.toUserDto(userRepository.save(user));
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @Override
   public PaginationResponseDto<UserResponseDto> getAllUsers(PaginationFullRequestDto request) {
     Pageable pageable = PaginationUtil.buildPageable(request, SortByDataConstant.USER);
@@ -99,10 +105,11 @@ public class UserServiceImpl implements UserService {
 
   }
 
+  @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
   @Override
   public UserResponseDto updateUserName(String id, UserUpdateDto dto) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
 
     userMapper.updateUserFromDto(dto, user);
 
@@ -110,25 +117,27 @@ public class UserServiceImpl implements UserService {
     return userMapper.toUserDto(user);
   }
 
+  @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
   @Override
   public void deleteUser(String id) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
     userRepository.delete(user);
   }
 
+  @PreAuthorize("#username == authentication.principal.username or hasRole('ADMIN')")
   @Override
   public void changePassword(String username, ChangePasswordRequestDto request) {
       User user = userRepository.findByUsername(username)
-              .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+              .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
 
     if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-      throw new IllegalArgumentException("Old password is incorrect");
+      throw new BadRequestException(ErrorMessage.OtpForgotPassword.ERR_OLD_PASSWORD_INCORRECT);
     }
 
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);
-}
+  }
 
 
 }

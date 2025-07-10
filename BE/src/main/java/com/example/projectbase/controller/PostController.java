@@ -72,14 +72,14 @@ public class PostController {
                     description = "Danh sách file upload",
                     required = true
             )
-            @RequestPart("files") List<MultipartFile> files) throws IOException, InterruptedException, ExecutionException {
+            @RequestPart("files") List<MultipartFile> files) throws IOException {
         log.info("transfer To original File");
         List<File> copiedFiles = new ArrayList<>();
         List<String> contentTypeList = new ArrayList<>();
         for (MultipartFile multipartFile : files) {
             contentTypeList.add(multipartFile.getContentType());
             File tempFile = File.createTempFile("upload_", multipartFile.getOriginalFilename());
-            multipartFile.transferTo(tempFile); // ⬅ chuyển dữ liệu sang file thật
+            multipartFile.transferTo(tempFile);
             copiedFiles.add(tempFile);
         }
 

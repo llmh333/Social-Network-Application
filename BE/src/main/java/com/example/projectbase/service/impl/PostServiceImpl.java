@@ -16,6 +16,7 @@ import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.PostRepository;
+import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.PostService;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,12 +49,13 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final MediaRepository mediaRepository;
-    private final MediaService mediaService;
     private final VideoProcessingService videoProcessingService;
     private final AudioProcessingService audioProcessingService;
     private final ImageProcessingService imageProcessingService;
+    private final UserRepository userRepository;
     private final PostMapper postMapper;
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public PostResponseDto createPost(PostRequestDto requestDto, List<File> files, List<String> contentTypeFileList) {
         if (!files.get(0).isFile()) {
@@ -102,9 +105,7 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-
-
-
+    @PreAuthorize("isAuthenticated() and @postServiceImpl.isOwner(#postId, authentication.username)")
     @Transactional
     @Override
     public void deletePost(Long postId) {
@@ -112,6 +113,7 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(post);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public PaginationResponseDto<PostResponseDto> getAllPostsByTitleKeyword(PaginationFullRequestDto request) {
         int pageNum = request.getPageNum();
@@ -182,5 +184,12 @@ public class PostServiceImpl implements PostService {
     private Post findPostOrThrow(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(id)}));
+    }
+
+    public boolean isOwner(Long postId, String username) {
+        Post post = findPostOrThrow(postId);
+        User user = userRepository.findById(post.getCreatedBy())
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
+        return user.getUsername().equals(username);
     }
 }
