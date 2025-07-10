@@ -24,6 +24,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,7 @@ public class FollowServiceImpl implements FollowService {
     private final FollowMapper followMapper;
     private final UserMapper userMapper;
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public FollowResponseDto follow(FollowRequestDto requestDto) {
         String followingId = requestDto.getFollowingId();
@@ -70,8 +72,9 @@ public class FollowServiceImpl implements FollowService {
         responseDto.setFollowingId(following.getId());
 
         return responseDto;
-}
+    }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public boolean unfollow(String followingId) {
 
@@ -103,6 +106,7 @@ public class FollowServiceImpl implements FollowService {
         return true;
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public PaginationResponseDto<UserSummaryDto> getFollowers(PaginationRequestDto requestDto) {
 
@@ -131,6 +135,7 @@ public class FollowServiceImpl implements FollowService {
         return new PaginationResponseDto<>(metadata, userSummaries);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public PaginationResponseDto<UserSummaryDto> getFollowings(PaginationRequestDto requestDto) {
 
@@ -159,6 +164,7 @@ public class FollowServiceImpl implements FollowService {
         return new PaginationResponseDto<>(metadata, userSummaries);
     }
 
+    @PreAuthorize("isAuthenticated()")
     private Map<String, User> getFollowerAndFollowing(String followerId, String followingId) {
         User following = userRepository.findById(followingId).orElseThrow(
                 () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{followingId})

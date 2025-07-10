@@ -59,27 +59,32 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and().csrf().disable()
                 .authorizeRequests()
                 .antMatchers(
-                        "/api/v1/auth/login/**",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/refresh-token",
                         "/api/v1/auth/register",
-                        "/api/v1/auth/testregis",
+                        "/api/v1/forgot-password/**",
+                        "/api/v1/auth/register",
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                         "/oauth2/**",
                         "/login/oauth2/**",
-                        "/login/oauth2/code/*",
-                        "/api/v1/forgot-password/**"
+                        "/login/oauth2/code/*"
                 ).permitAll()
+
+                .antMatchers("/api/v1/roles/**").hasRole("ADMIN")
+
+                .antMatchers("/api/v1/share/**").authenticated()
                 .anyRequest().authenticated()
 
                 .and()
-                .oauth2Login()
-                .redirectionEndpoint(redir -> redir
-                        .baseUri("/login/oauth2/code/{registrationId}"))
-                .successHandler(oAuth2LoginSuccessHandler)
-                .failureHandler(oAuth2LoginFailureHandler)
-                .userInfoEndpoint()
-                    .userService(oAuthService)
-                    .oidcUserService(customOidcUserService);
 
+                .oauth2Login()
+                    .redirectionEndpoint(redir -> redir
+                        .baseUri("/login/oauth2/code/{registrationId}"))
+                    .successHandler(oAuth2LoginSuccessHandler)
+                    .failureHandler(oAuth2LoginFailureHandler)
+                    .userInfoEndpoint()
+                        .userService(oAuthService)
+                        .oidcUserService(customOidcUserService);
         http.exceptionHandling().authenticationEntryPoint(new JwtAuthenticationEntryPoint());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     }

@@ -7,6 +7,7 @@ import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.repository.UserSettingRepository;
 import com.example.projectbase.service.UserSettingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,6 +16,7 @@ public class UserSettingServiceImpl implements UserSettingService{
     private final UserRepository userRepository;
     private final UserSettingRepository userSettingRepository;
 
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ADMIN')")
     @Override
     public void updateUserSetting(String username, UserSettingRequestDto request) {
 
