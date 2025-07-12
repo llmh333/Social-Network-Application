@@ -17,7 +17,7 @@ public class ConfirmNewPasswordRequestDto {
     private String resetPasswordToken;
 
     @NotNull(message = ErrorMessage.NOT_BLANK_FIELD)
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = ErrorMessage.INVALID_PASSWORD)
+    @Pattern(regexp = "^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};:\"\\\\|,.<>\\/?])(.{6,})$", message = ErrorMessage.INVALID_PASSWORD)
     private String newPassword;
 
     @NotNull(message = ErrorMessage.NOT_BLANK_FIELD)
