@@ -2,9 +2,12 @@ package com.example.projectbase.security.jwt;
 
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.exception.UnauthorizedException;
+import com.example.projectbase.repository.TokenBlacklistRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.exception.InvalidException;
+import com.example.projectbase.util.TokenBlacklistUtil;
 import io.jsonwebtoken.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
     private final String CLAIM_TYPE = "type";
@@ -28,6 +32,7 @@ public class JwtTokenProvider {
     private final String TYPE_REFRESH = "refresh";
     private final String USERNAME_KEY = "username";
     private final String AUTHORITIES_KEY = "auth";
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
@@ -90,26 +95,28 @@ public class JwtTokenProvider {
     }
 
     public Boolean isTokenExpired(String token) {
-        return extractExpirationFromJwt(token).before(new Date());
+        return extractExpirationFromJwt(token).after(new Date());
     }
 
     public boolean validateToken(String token) {
         try {
+            boolean checkTokenBlacklist = TokenBlacklistUtil.isTokenBlacklisted(token, tokenBlacklistRepository);
+            if (checkTokenBlacklist) {
+                throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
+            }
             Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
             return true;
         } catch (SignatureException ex) {
             log.error("Invalid JWT signature");
+            throw new UnauthorizedException(ErrorMessage.Auth.INVALID_JWT_SIGNATURE);
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token");
+            throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
         } catch (ExpiredJwtException ex) {
             log.error("Expired JWT token");
-            throw new UnauthorizedException("Expired JWT token");
-        } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT token");
-        } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty");
+            TokenBlacklistUtil.addTokenToBlacklist(token, "Expired JWT token", tokenBlacklistRepository);
+            throw new UnauthorizedException(ErrorMessage.Auth.EXPIRED_REFRESH_TOKEN);
         }
-        return false;
     }
 
 }

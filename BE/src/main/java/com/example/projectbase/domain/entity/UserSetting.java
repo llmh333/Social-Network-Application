@@ -3,6 +3,8 @@ package com.example.projectbase.domain.entity;
 import com.example.projectbase.constant.LanguageSetting;
 import com.example.projectbase.constant.ThemeSetting;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 
@@ -29,5 +31,6 @@ public class UserSetting {
 
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 }
