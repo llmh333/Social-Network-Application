@@ -20,4 +20,6 @@ public interface UserSessionRepository extends JpaRepository<UserSession, String
     UserSession findByIpAddressAndUsername(String ipAddress, String username);
 
     void deleteAllByUsername(String username);
+
+    UserSession findByRefreshToken(String refreshToken);
 }

@@ -1,0 +1,38 @@
+services:
+  db:
+    image: mysql:8.0.30
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    volumes:
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - '3307:3306'
+    deploy:
+      resources:
+        limits:
+          memory: 300MB
+        reservations:
+          memory: 200MB
+    networks:
+      - chillandchill-network
+  spring-service:
+    image: hieutd3q/chillandchill:0.0.1
+    restart: no
+    depends_on:
+      - db
+    env_file:
+      - /BE/.env
+    ports:
+      - '8080:8080'
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
+        reservations:
+          memory: 256MB
+    networks:
+      - chillandchill-network
+networks:
+  chillandchill-network:
+    driver: bridge

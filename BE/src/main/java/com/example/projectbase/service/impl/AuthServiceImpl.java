@@ -188,6 +188,12 @@ public class AuthServiceImpl implements AuthService {
         String username = jwtTokenProvider.extractClaimUsername(refreshToken);
         UserPrincipal userPrincipal = (UserPrincipal) userDetailsService.loadUserByUsername(username);
         String newAccessToken = jwtTokenProvider.generateToken(userPrincipal, false);
+        UserSession userSession = userSessionRepository.findByRefreshToken(refreshToken);
+        if (userSession == null) {
+          throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+        }
+        userSession.setToken(newAccessToken);
+        userSessionRepository.save(userSession);
         logger.info("Refresh token successful for user: {}", username);
         return new TokenRefreshResponseDto(newAccessToken, refreshToken);
       }
@@ -223,7 +229,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
 
-  @Scheduled(fixedRate = 10 * 60 * 1000L)
+  @Scheduled(fixedRate = 7 * 60 * 1000L)
   public void checkUserStatus() {
     Set<String> keys = redisTemplate.keys("username:*:session");
     try {
@@ -241,11 +247,10 @@ public class AuthServiceImpl implements AuthService {
         } else if (duration.toMinutes() > 15) {
           sessionMap.put("status", UserStatus.OFFLINE.name());
           UserSession userSession = userSessionRepository.findByUsername(username);
-          if (userSession == null) {
-            throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+          if (userSession != null) {
+            userSession.setIsActive(false);
+            userSessionRepository.save(userSession);
           }
-          userSession.setIsActive(false);
-          userSessionRepository.save(userSession);
         }
         String updatedJson = objectMapper.writeValueAsString(sessionMap);
         redisService.save("username:" + username + ":session", updatedJson);
