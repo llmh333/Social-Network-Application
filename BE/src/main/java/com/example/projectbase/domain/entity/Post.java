@@ -3,6 +3,8 @@ package com.example.projectbase.domain.entity;
 import com.example.projectbase.constant.MediaType;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedBy;
 
 import javax.persistence.*;
@@ -27,6 +29,11 @@ public class Post extends DateAuditing {
     private String title;
     @Column(nullable = false)
     private String content;
+
+    @ManyToOne
+    @JoinColumn(name = "media_category_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_CATEGORY"))
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private PostCategory category;
 
     @ManyToOne
     @JoinColumn(name= "original_post_id")

@@ -38,18 +38,20 @@ public class CommentController {
     @Operation(summary = "Thêm bình luận cho bài viết")
     @PostMapping(UrlConstant.Comment.ADD_COMMENT)
     public ResponseEntity<?> addComment(
+            @PathVariable("postId") Long postId,
             @RequestBody @Valid CommentRequestDto requestDto,
             Principal principal) {
-        CommentResponseDto created = commentService.addComment(requestDto, principal.getName());
+        CommentResponseDto created = commentService.addComment(postId, requestDto, principal.getName());
         return VsResponseUtil.success(HttpStatus.CREATED, created);
     }
 
     @Operation(summary = "Trả lời bình luận")
     @PostMapping(UrlConstant.Comment.REPLY_COMMENT)
     public ResponseEntity<?> replyToComment(
-            @Valid @RequestBody ReplyCommentRequestDto requestDto,
+            @PathVariable("postId") Long postId,
+            @RequestBody @Valid ReplyCommentRequestDto requestDto,
             Principal principal) {
-        CommentResponseDto reply = commentService.replyToComment(requestDto, principal.getName());
+        CommentResponseDto reply = commentService.replyToComment(postId, requestDto, principal.getName());
         return VsResponseUtil.success(HttpStatus.CREATED, reply);
     }
 
@@ -67,22 +69,24 @@ public class CommentController {
     public ResponseEntity<?> getCommentWithReplies(
             @PathVariable("postId") Long postId,
             @PathVariable("commentId") Long commentId) {
-        CommentResponseDto responseDto = commentService.getCommentWithReplies(commentId);
+        CommentResponseDto responseDto = commentService.getCommentWithReplies(postId, commentId);
         return VsResponseUtil.success(responseDto);
     }
 
     @Operation(summary = "Lấy các phản hồi (replies) của một bình luận gốc")
     @GetMapping(UrlConstant.Comment.GET_REPLIES)
-    public ResponseEntity<?> getRepliesOfComment(@PathVariable Long commentId) {
-        List<CommentResponseDto> replies = commentService.getRepliesByParentId(commentId);
+    public ResponseEntity<?> getRepliesOfComment(
+            @PathVariable("postId") Long postId,
+            @PathVariable Long commentId) {
+        List<CommentResponseDto> replies = commentService.getRepliesByParentId(postId, commentId);
         return VsResponseUtil.success(replies);
     }
 
     @Operation(summary = "Cập nhật bình luận")
     @PutMapping(UrlConstant.Comment.UPDATE_COMMENT)
-    public ResponseEntity<?> updateComment(@RequestParam("commentId") Long commentId,
+    public ResponseEntity<?> updateComment(@PathVariable("commentId") Long commentId,
                                            @RequestParam("content") String content,
-                                           @RequestParam("postId") Long postId,
+                                           @PathVariable("postId") Long postId,
                                            Principal principal) {
         CommentResponseDto updated = commentService.updateComment(commentId, content, postId, principal.getName());
         return VsResponseUtil.success(updated);

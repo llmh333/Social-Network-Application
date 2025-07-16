@@ -2,6 +2,7 @@ package com.example.projectbase.domain.mapper;
 
 import com.example.projectbase.domain.dto.request.UserCreateDto;
 import com.example.projectbase.domain.dto.request.UserUpdateDto;
+import com.example.projectbase.domain.dto.response.RegisterResponseDto;
 import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.domain.dto.response.UserSummaryDto;
 import com.example.projectbase.domain.entity.User;
@@ -24,4 +25,6 @@ public interface UserMapper {
   void updateUserFromDto(UserUpdateDto dto, @MappingTarget User user);
 
   UserSummaryDto toUserSummaryDto(User user);
+
+  RegisterResponseDto toRegisterDto(User user);
 }

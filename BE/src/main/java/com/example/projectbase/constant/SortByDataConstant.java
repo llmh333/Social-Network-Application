@@ -10,7 +10,7 @@ public enum SortByDataConstant implements SortByInterface {
           return "first_name";
         case "lastName":
           return "last_name";
-        case "lastModifiedDate":
+        case "lastModifiedAt":
           return "last_modified_at";
         default:
           return "created_at";
@@ -36,7 +36,7 @@ public enum SortByDataConstant implements SortByInterface {
       switch (sortBy) {
         case "title":
           return "title";
-        case "lastModifiedDate":
+        case "lastModifiedAt":
           return "lastModifiedAt";
         default:
           return "createdAt";

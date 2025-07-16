@@ -9,10 +9,12 @@ import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
 import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
+import com.example.projectbase.domain.dto.response.RegisterResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 import com.example.projectbase.domain.entity.TokenBlacklist;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.entity.UserSession;
+import com.example.projectbase.domain.mapper.UserMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.ConflictException;
 import com.example.projectbase.exception.NotFoundException;
@@ -68,10 +70,11 @@ public class AuthServiceImpl implements AuthService {
   private final RedisServiceImpl redisService;
   private final ObjectMapper objectMapper;
   private final RedisTemplate redisTemplate;
+  private final UserMapper userMapper;
 
   @Override
   @Transactional
-  public LoginResponseDto register(RegisterRequestDto req) {
+  public RegisterResponseDto register(RegisterRequestDto req) {
     try {
       if (userRepository.existsByUsername(req.getUsername())) {
           throw new ConflictException(ErrorMessage.Auth.ERR_ALREADY_EXISTS_USERNAME);
@@ -91,21 +94,11 @@ public class AuthServiceImpl implements AuthService {
       user.setRole( roleRepository.findByName(RoleConstant.USER)
               .orElseThrow(() -> new NotFoundException(ErrorMessage.Role.ERR_NOT_FOUND, new String[]{RoleConstant.USER}))
       );
-      userRepository.save(user);
-      UserPrincipal principal = UserPrincipal.create(user);
 
-      String accessToken = jwtTokenProvider.generateToken(principal, false);
-      String refreshToken = jwtTokenProvider.generateToken(principal, true);
-
-      return new LoginResponseDto(
-              accessToken,
-              refreshToken,
-              principal.getId(),
-              principal.getAuthorities()
-      );
+      return userMapper.toRegisterDto(userRepository.save(user));
   } catch (Exception ex) {
     logger.error("Register failed", ex);
-    throw ex;
+    throw new BadRequestException(ErrorMessage.ERR_EXCEPTION_GENERAL);
   }
   }
 
@@ -155,7 +148,6 @@ public class AuthServiceImpl implements AuthService {
       dataSession.put("last_activity", LocalDateTime.now());
       String json = objectMapper.writeValueAsString(dataSession);
       redisService.save("username:"+userPrincipal.getUsername()+":session", json);
-      logger.info("Redis data: {}", redisService.get("username:{"+userPrincipal.getUsername()+"}:session"));
       return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
     } catch (InternalAuthenticationServiceException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME);
