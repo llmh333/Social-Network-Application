@@ -12,14 +12,18 @@ import com.example.projectbase.domain.dto.request.UserUpdateDto;
 import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.domain.entity.Role;
 import com.example.projectbase.domain.entity.User;
+import com.example.projectbase.domain.entity.UserSession;
 import com.example.projectbase.domain.mapper.UserMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
+import com.example.projectbase.repository.TokenBlacklistRepository;
 import com.example.projectbase.repository.UserRepository;
+import com.example.projectbase.repository.UserSessionRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.UserService;
 import com.example.projectbase.util.PaginationUtil;
+import com.example.projectbase.util.TokenBlacklistUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +33,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +45,10 @@ public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
 
   private final RoleRepository roleRepository;
+
+  private final UserSessionRepository userSessionRepository;
+
+  private final TokenBlacklistRepository tokenBlacklistRepository;
 
   private final UserMapper userMapper;
 
@@ -119,9 +128,18 @@ public class UserServiceImpl implements UserService {
 
   @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
   @Override
+  @Transactional
   public void deleteUser(String id) {
     User user = userRepository.findById(id)
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
+    List<UserSession> userSessions = userSessionRepository.findAllByUsername(user.getUsername());
+    if (!userSessions.isEmpty()) {
+      userSessions.forEach(userSession -> {
+        TokenBlacklistUtil.addTokenToBlacklist(userSession.getToken(), "Logout token", tokenBlacklistRepository);
+        TokenBlacklistUtil.addTokenToBlacklist(userSession.getRefreshToken(), "Logout refresh token", tokenBlacklistRepository);
+      });
+    }
+    userSessionRepository.deleteAllByUsername(user.getUsername());
     userRepository.delete(user);
   }
 

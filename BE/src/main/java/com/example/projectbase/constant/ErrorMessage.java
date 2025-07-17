@@ -25,10 +25,15 @@ public class ErrorMessage {
     public static final String ERR_ACCOUNT_NOT_ENABLED = "exception.auth.account.not.enabled";
     public static final String ERR_ACCOUNT_LOCKED = "exception.auth.account.locked";
     public static final String INVALID_REFRESH_TOKEN = "exception.auth.invalid.refresh.token";
+    public static final String INVALID_ACCESS_TOKEN = "exception.auth.invalid.access.token";
+    public static final String INVALID_JWT_SIGNATURE = "exception.auth.invalid.jwt.signature";
     public static final String EXPIRED_REFRESH_TOKEN = "exception.auth.expired.refresh.token";
+    public static final String EXPIRED_ACCESS_TOKEN = "exception.auth.expired.access.token";
+    public static final String ERR_ALREADY_LOGGED_IN = "exception.auth.already.logged";
     public static final String ERR_ALREADY_EXISTS_USERNAME = "exception.auth.already.exists.username";
     public static final String ERR_ALREADY_EXISTS_EMAIL = "exception.auth.already.exists.email";
     public static final String ERR_REFRESH_TOKEN = "exception.auth.refresh.token.error";
+    public static final String ERR_ACCESS_TOKEN = "exception.auth.access.token.error";
   }
 
   public static class User {

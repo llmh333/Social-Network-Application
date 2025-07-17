@@ -52,12 +52,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             MessageSource messageSource = BeanUtil.getBean(MessageSource.class);
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            String message = messageSource.getMessage(ErrorMessage.UNAUTHORIZED, null, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage(e.getMessage(), null, LocaleContextHolder.getLocale());
             response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(message)));
             return;
         }
         catch (Exception ex) {
-            log.error("Could not set user authentication in security context", ex);
+            ex.printStackTrace();
+            log.info("Failed to process authentication request: " + ex.getMessage());
+            return;
         }
         filterChain.doFilter(request, response);
     }

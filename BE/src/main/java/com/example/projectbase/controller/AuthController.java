@@ -60,8 +60,8 @@ public class AuthController {
           @ApiResponse(responseCode = "401", description = "Sai thông tin đăng nhập")
   })
   @PostMapping(UrlConstant.Auth.LOGIN)
-  public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
-    return VsResponseUtil.success(authService.login(request));
+  public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request, HttpServletRequest requestHttp) {
+    return VsResponseUtil.success(authService.login(request, requestHttp));
   }
 
   @Operation(

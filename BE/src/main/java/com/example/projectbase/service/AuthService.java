@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 public interface AuthService {
   LoginResponseDto register(RegisterRequestDto request);
 
-  LoginResponseDto login(LoginRequestDto request);
+  LoginResponseDto login(LoginRequestDto request, HttpServletRequest httpServletRequest);
 
   TokenRefreshResponseDto refresh(TokenRefreshRequestDto request);
 

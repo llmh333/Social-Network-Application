@@ -32,4 +32,5 @@ public interface UserRepository extends JpaRepository<User, String> {
                     new String[]{currentUser.getUsername()}));
   }
 
+  User findByProviderId(String providerId);
 }
