@@ -20,7 +20,7 @@ public class AsyncConfig {
     @Bean(name = "videoProcessingExecutor")
     public AsyncTaskExecutor videoProcessingExecutor() {
 
-        videoExecutor.setCorePoolSize(5);
+        videoExecutor.setCorePoolSize(3);
         videoExecutor.setMaxPoolSize(8);
         videoExecutor.setKeepAliveSeconds(300);
         videoExecutor.setQueueCapacity(50);
@@ -45,7 +45,7 @@ public class AsyncConfig {
     @Bean(name = "imageProcessingExecutor")
     public AsyncTaskExecutor imageProcessingExecutor() {
 
-        imageExecutor.setCorePoolSize(10);
+        imageExecutor.setCorePoolSize(7);
         imageExecutor.setMaxPoolSize(27);
         imageExecutor.setKeepAliveSeconds(180);
         imageExecutor.setQueueCapacity(100);
@@ -70,7 +70,7 @@ public class AsyncConfig {
     @Bean(name = "audioProcessingExecutor")
     public AsyncTaskExecutor audioProcessingExecutor() {
 
-        audioExecutor.setCorePoolSize(10);
+        audioExecutor.setCorePoolSize(5);
         audioExecutor.setMaxPoolSize(15);
         audioExecutor.setKeepAliveSeconds(300);
         audioExecutor.setQueueCapacity(50);

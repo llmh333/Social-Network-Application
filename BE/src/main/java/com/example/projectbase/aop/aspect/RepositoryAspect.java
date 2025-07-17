@@ -38,6 +38,7 @@ public class RepositoryAspect {
   @Around("execution(* com.example.projectbase.controller.*.*(..))")
   public Object updateLastActivity(ProceedingJoinPoint joinPoint) throws Throwable {
     try {
+      log.info("Updating last activity for user");
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       if (authentication != null && authentication.isAuthenticated()) {
         String userId = authentication.getName();
@@ -47,7 +48,6 @@ public class RepositoryAspect {
       log.error("Failed to update last activity", e);
     }
 
-    // Đừng quên gọi proceed()
     return joinPoint.proceed();
   }
 }
