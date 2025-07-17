@@ -67,6 +67,7 @@ public class UrlConstant {
     public static final String CREATE_NEW_POST   = PRE_FIX + "/create";
     public static final String GET_ALL_POST_BY_TITLE    = PRE_FIX + "/search";
     public static final String GET_POST      = PRE_FIX + "/{id}";
+    public static final String GET_TRENDING_POST = PRE_FIX + "/trending";
     public static final String UPDATE_POST   = PRE_FIX + "/{id}";
     public static final String DELETE_POST   = PRE_FIX + "/{id}";
     public static final String REACTION_FOR_POST = PRE_FIX + "/{postId}/reaction";
@@ -95,16 +96,15 @@ public class UrlConstant {
 
 
   public static class Share{
-    public static final String PRE_FIX="/share";
-    public static final String SHARE_POST = PRE_FIX+"/post";
-    public static final String SHARE_MEDIA= PRE_FIX+"/media";
+    public static final String PRE_FIX="/posts/{postId}";
+    public static final String SHARE_POST = PRE_FIX+"/share";
     private Share(){}
 
   }
   public static class Comment {
     public static final String PRE_FIX = "/posts/{postId}/comments";
     public static final String ADD_COMMENT = PRE_FIX + "/comment";
-    public static final String REPLY_COMMENT = PRE_FIX + "/{parentCommentId}/reply";
+    public static final String REPLY_COMMENT = PRE_FIX + "/reply";
     public static final String GET_COMMENTS = PRE_FIX;
     public static final String GET_REPLIES = PRE_FIX + "/{commentId}/replies";
     public static final String GET_COMMENT_WITH_REPLIES = PRE_FIX + "/{commentId}/with-replies";

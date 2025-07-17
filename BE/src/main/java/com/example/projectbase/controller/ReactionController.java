@@ -38,8 +38,8 @@ public class ReactionController {
     }
 
     @PostMapping(value = UrlConstant.Post.REACTION_FOR_POST)
-    public ResponseEntity<RestData<?>> createReaction(@RequestBody @Valid ReactionRequestDto request,
-                                                      @PathVariable Long postId) {
+    public ResponseEntity<RestData<?>> createReaction(@PathVariable Long postId,
+                                                      @RequestBody @Valid ReactionRequestDto request) {
         ReactionResponseDto responseDto = reactionService.reactionForPost(request, postId);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }

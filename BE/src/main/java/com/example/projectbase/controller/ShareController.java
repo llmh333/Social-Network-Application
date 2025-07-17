@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.example.projectbase.base.VsResponseUtil;
+
+import javax.validation.Valid;
 import java.security.Principal;
 
 
@@ -29,19 +31,12 @@ import java.security.Principal;
 @Tag(name = "share", description = "API thực hiện chức năng share post,media")
 public class ShareController {
     private final ShareService shareService;
-    private final PostMapper postMapper;
 
     @PostMapping(UrlConstant.Share.SHARE_POST)
-    public ResponseEntity<?> sharePost(@RequestBody SharePostRequestDto request) {
-        SharePostResponseDto responseDto = shareService.sharePost(request);
+    public ResponseEntity<?> sharePost(@PathVariable("postId") Long postId,
+                                       @RequestBody @Valid SharePostRequestDto request) {
+        SharePostResponseDto responseDto = shareService.sharePost(postId, request);
         return VsResponseUtil.success(responseDto);
-    }
-
-
-    @GetMapping(UrlConstant.Share.SHARE_MEDIA + "/{id}")
-    public ResponseEntity<?> shareMedia(@PathVariable Long id) {
-        ShareMediaResponseDto response = shareService.getShareMedia(id);
-        return VsResponseUtil.success(response);
     }
 }
 

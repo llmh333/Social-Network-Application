@@ -1,5 +1,6 @@
 package com.example.projectbase.service.impl;
 
+import com.example.projectbase.constant.CommonConstant;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
@@ -8,37 +9,36 @@ import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
+import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.entity.Post;
 import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.PostMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
+import com.example.projectbase.repository.PostCategoryRepository;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.PostRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
-import com.example.projectbase.service.MediaService;
 import com.example.projectbase.service.PostService;
-import com.example.projectbase.util.MediaProcessingUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -49,10 +49,14 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final MediaRepository mediaRepository;
+    private final PostCategoryRepository postCategoryRepository;
     private final VideoProcessingService videoProcessingService;
     private final AudioProcessingService audioProcessingService;
     private final ImageProcessingService imageProcessingService;
+    private final RedisServiceImpl redisService;
+    private final PostCategoryServiceImpl postCategoryService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
     private final PostMapper postMapper;
 
     @PreAuthorize("isAuthenticated()")
@@ -70,7 +74,10 @@ public class PostServiceImpl implements PostService {
             }
         }
 
-        Post post = postRepository.save(buildPostFromDto(requestDto));
+        PostCategory postCategory = postCategoryService.createPostCategory(requestDto.getCategory());
+
+        Post post = postRepository.save(buildPostFromDto(requestDto, postCategory));
+
         processAndSaveMediaAsync(post, requestDto, files, contentTypeFileList);
         log.info("Post created: {}", post.toString());
         return postMapper.toPostResponseDto(post);
@@ -95,7 +102,7 @@ public class PostServiceImpl implements PostService {
                     throw new BadRequestException(ErrorMessage.Media.ERR_AUDIO_UPLOAD_FORMAT);
                 }
 
-                return audioProcessingService.uploadAudio(files.get(0), files.get(1), contentTypeFileList, requestDto.getTitle(), requestDto.getSingerName(), requestDto.getCategory())
+                return audioProcessingService.uploadAudio(files.get(0), files.get(1), contentTypeFileList, requestDto.getSingerName())
                         .thenAccept(audioResponseDtos -> {
                             audioResponseDtos.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
                         }
@@ -136,7 +143,7 @@ public class PostServiceImpl implements PostService {
                 .pageSize(pageSize)
                 .totalPages(postPage.getTotalPages())
                 .sortBy(request.getSortBy())
-                .sortType(request.getIsAscending() ? "ASC" : "DESC")
+                .sortType(request.getIsAscending() ? CommonConstant.SORT_TYPE_ASC : CommonConstant.SORT_TYPE_DESC)
                 .totalElements(postPage.getTotalElements())
                 .build();
 
@@ -150,17 +157,43 @@ public class PostServiceImpl implements PostService {
         if (post.getOriginalPost() != null) {
             postResponseDto.setOriginalPostId(post.getOriginalPost().getId());
         }
-        log.info("List Media size: {}",  post.getMediaList().size());
         return postResponseDto;
     }
 
-    private Post buildPostFromDto(PostRequestDto requestDto) {
+    @Override
+    public PaginationResponseDto<PostResponseDto> getPostsTrendingForUser(PaginationFullRequestDto request) {
+        int pageSize = request.getPageSize();
+        int pageNum = request.getPageNum();
+
+        List<String> categoryNames = getTrendingCategories();
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+
+        Page<Post> postPage = postRepository.findByCategoryNameIn(categoryNames, pageable);
+
+        List<PostResponseDto> dtoList = postPage.stream()
+                .map(postMapper::toPostResponseDto)
+                .collect(Collectors.toList());
+
+        PagingMeta meta = PagingMeta.builder()
+                .pageNum(pageNum + 1)
+                .pageSize(pageSize)
+                .totalPages(postPage.getTotalPages())
+                .sortBy(request.getSortBy())
+                .sortType(request.getIsAscending() ? CommonConstant.SORT_TYPE_ASC : CommonConstant.SORT_TYPE_DESC)
+                .totalElements(postPage.getTotalElements())
+                .build();
+
+        return new  PaginationResponseDto(meta, dtoList);
+    }
+
+    private Post buildPostFromDto(PostRequestDto requestDto, PostCategory postCategory) {
         return Post.builder()
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
                 .reactionCount(0L)
                 .commentCount(0L)
                 .shareCount(0L)
+                .category(postCategory)
                 .mediaType(requestDto.getMediaType())
                 .mediaList(new ArrayList<>())
                 .build();
@@ -191,5 +224,40 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(post.getCreatedBy())
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
         return user.getUsername().equals(username);
+    }
+
+    private List<String> getTrendingCategories() {
+        try {
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String trendingCategory = redisService.get("username:"+userPrincipal.getUsername()+":trending");
+            if (trendingCategory != null) {
+                Map<String, Object> dataTrending = objectMapper.readValue(trendingCategory, new TypeReference<>() {});
+                Map<String, Object> sortedTrending = dataTrending.entrySet()
+                        .stream()
+                        .sorted(Comparator.comparing(e -> (Integer)e.getValue(), Comparator.reverseOrder()))
+                        .collect(Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (e1, e2) -> e1,
+                                LinkedHashMap::new
+                        ));
+
+                List<String> categoryNames = sortedTrending.entrySet()
+                        .stream()
+                        .limit(5)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+                return categoryNames;
+            }
+            List<PostCategory> postCategoryList = postCategoryRepository.findTop5ByOrderByInteractionCountDesc();
+            List<String> categoryNames = new ArrayList<>();
+            postCategoryList.stream().forEach(postCategory -> {
+                categoryNames.add(postCategory.getName());
+            });
+            return categoryNames;
+        } catch (JsonProcessingException ex) {
+            throw new BadRequestException(ErrorMessage.ERR_EXCEPTION_GENERAL);
+        }
+
     }
 }

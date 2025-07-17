@@ -11,12 +11,12 @@ import java.util.Optional;
 
 public interface CommentService {
 
-    CommentResponseDto addComment(CommentRequestDto requestDto, String username);
-    CommentResponseDto replyToComment(ReplyCommentRequestDto requestDto, String username);
+    CommentResponseDto addComment(Long postId, CommentRequestDto requestDto, String username);
+    CommentResponseDto replyToComment(Long postId, ReplyCommentRequestDto requestDto, String username);
     CommentResponseDto updateComment(Long commentId, String content, Long postId, String username);
     void deleteComment(Long postId, Long commentId, String username);
     Page<CommentResponseDto> getCommentsByPost(Long postId, Pageable pageable);
-    List<CommentResponseDto> getRepliesByParentId(Long parentId);
-    CommentResponseDto getCommentWithReplies(Long commentId);
+    List<CommentResponseDto> getRepliesByParentId(Long postId, Long parentId);
+    CommentResponseDto getCommentWithReplies(Long postId, Long commentId);
 
 }

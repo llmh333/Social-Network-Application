@@ -78,7 +78,7 @@ public class PostController {
         List<String> contentTypeList = new ArrayList<>();
         for (MultipartFile multipartFile : files) {
             contentTypeList.add(multipartFile.getContentType());
-            File tempFile = File.createTempFile("upload_", multipartFile.getOriginalFilename());
+            File tempFile = File.createTempFile("_upload_", multipartFile.getName());
             multipartFile.transferTo(tempFile);
             copiedFiles.add(tempFile);
         }
@@ -104,6 +104,11 @@ public class PostController {
         return VsResponseUtil.success(post);
     }
 
+    @GetMapping(path =  UrlConstant.Post.GET_TRENDING_POST)
+    public ResponseEntity<?> getTrendingPost(@RequestBody @Valid PaginationFullRequestDto request) throws JsonProcessingException {
+        PaginationResponseDto<PostResponseDto> response = postService.getPostsTrendingForUser(request);
+        return VsResponseUtil.success(HttpStatus.OK, response);
+    }
 
     @Operation(summary = "Xóa bài viết theo ID")
     @DeleteMapping(path = UrlConstant.Post.DELETE_POST)

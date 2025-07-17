@@ -9,7 +9,5 @@ import com.example.projectbase.domain.entity.Post;
 
 
 public interface ShareService {
-    public SharePostResponseDto sharePost(SharePostRequestDto request);
-
-    public ShareMediaResponseDto getShareMedia(Long id);
+    public SharePostResponseDto sharePost(Long postId, SharePostRequestDto request);
 }

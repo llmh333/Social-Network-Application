@@ -1,6 +1,7 @@
 package com.example.projectbase.domain.dto.response;
 
 import com.example.projectbase.constant.MediaType;
+import com.example.projectbase.domain.entity.PostCategory;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -23,6 +24,7 @@ public class PostResponseDto {
     private Long shareCount;
     private String createdBy;
     private MediaType mediaType;
+    private PostCategory category;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long originalPostId;

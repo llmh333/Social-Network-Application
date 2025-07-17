@@ -3,22 +3,19 @@ package com.example.projectbase.service.impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
-import com.example.projectbase.constant.MediaConstant;
-import com.example.projectbase.constant.MediaType;
 import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
+import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.UserRepository;
-import com.example.projectbase.service.MediaService;
 import com.example.projectbase.util.MediaProcessingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -43,10 +40,10 @@ public class AudioProcessingService {
     private final ImageProcessingService imageProcessingService;
 
     @Async("audioProcessingExecutor")
-    public CompletableFuture<List<MediaResponseDto>> uploadAudio(File audioFile, File thumbnailFile, List<String> contentTypeFileList, String title, String singerName, String category) {
+    public CompletableFuture<List<MediaResponseDto>> uploadAudio(File audioFile, File thumbnailFile, List<String> contentTypeFileList, String singerName) {
         try {
             MediaProcessingUtil.validateFile(audioFile, contentTypeFileList.get(0));
-            Media audioPending = MediaProcessingUtil.createMediaPending(audioFile, "audio", title, singerName, category, mediaRepository, userRepository);
+            Media audioPending = MediaProcessingUtil.createMediaPending(audioFile, "audio", singerName, mediaRepository, userRepository);
 
             return compressAudioAsync(audioFile,audioPending).thenApply(compressedFile -> {
                 try {
@@ -78,10 +75,8 @@ public class AudioProcessingService {
         File compressedFile = null;
 
         try {
-//            originalFile = File.createTempFile("original_", ".mp3");
-            compressedFile = File.createTempFile("compressed_", ".m4a");
 
-//            audioFile.transferTo(originalFile);
+            compressedFile = File.createTempFile("compressed_", ".m4a");
 
             if (compressedFile.exists()) {
                 compressedFile.delete();
@@ -159,7 +154,7 @@ public class AudioProcessingService {
                                     .height("300")
                     )
             );
-            log.info("start uploading video to cloudinary");
+            log.info("start uploading audio to cloudinary");
             Map<String, Object> result = cloudinary.uploader().uploadLarge(compressedFile, metaData);
             log.info("result: {}", result);
 
@@ -173,7 +168,7 @@ public class AudioProcessingService {
             audioResponseDto.setAuthorId(savedMedia.getUser().getId());
             responseDtoList.add(audioResponseDto);
 
-            log.info("Uploaded video to cloudinary successfully");
+            log.info("Uploaded audio to cloudinary successfully");
             return responseDtoList;
         } catch (Exception e) {
             log.info("have been error in method uploadAudioToCloudinary: {}", e.getMessage());
