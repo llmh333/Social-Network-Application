@@ -18,10 +18,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -37,7 +40,10 @@ public class ProjectBaseApplication {
 
   private final PasswordEncoder passwordEncoder;
 
-
+  @PostConstruct
+  void started() {
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+  }
 
   public static void main(String[] args) {
     Environment env = SpringApplication.run(ProjectBaseApplication.class, args).getEnvironment();
@@ -78,13 +84,14 @@ public class ProjectBaseApplication {
                 .firstName(userInfo.getFirstName())
                 .lastName(userInfo.getLastName())
                 .role(role.get())
-                .gender(GenderConstant.FEMALE)
+                .gender(GenderConstant.MALE)
                 .email(userInfo.getEmail())
                 .dob(LocalDate.now())
-                .email("admin@example.com")
+                .email(userInfo.getEmail())
                 .build();
         userRepository.save(admin);
       }
     };
   }
+
 }
