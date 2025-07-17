@@ -73,6 +73,9 @@ public class User extends DateAuditing {
   @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Follow> followers = new ArrayList<>();
 
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<UserSession> userSessions = new ArrayList<>();
+
   @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "setting_id", referencedColumnName = "id")
   private UserSetting userSetting;

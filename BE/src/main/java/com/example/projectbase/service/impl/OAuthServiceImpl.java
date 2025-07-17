@@ -50,10 +50,15 @@ public class OAuthServiceImpl extends DefaultOAuth2UserService implements OAuthS
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         Map<String, Object> attributes = oAuth2User.getAttributes();
-        log.info("Oauth2 [{}] attributes: {}", registrationId,attributes);
-
         String email = extractEmail(attributes);
-
+        if (registrationId.equals("facebook")) {
+            User user = userRepository.findByProviderId((String) attributes.get("id"));
+            if (user == null) {
+                user = createNewUser(registrationId, attributes, email);
+            }
+            return UserPrincipal.create(user, attributes);
+        }
+        logger.info("Email: {}", email);
         User user = userRepository.findByEmail(email).orElse(
                 createNewUser(registrationId, attributes, email)
         );
@@ -95,11 +100,10 @@ public class OAuthServiceImpl extends DefaultOAuth2UserService implements OAuthS
             String name = attributes.get("name").toString();
             String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
-            String timestamp = LocalDateTime.now().format(formatter);
             String withoutDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
             String resultEmail = withoutDiacritics.replaceAll("\\s+", "");
             logger.error("Email not found in OAuth2 attributes");
-            email = resultEmail + timestamp + "@facebook.com";
+            email = resultEmail + attributes.get("id") + "@facebook.com";
         }
         return email;
     }
