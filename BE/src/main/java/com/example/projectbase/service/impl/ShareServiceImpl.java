@@ -35,14 +35,14 @@ public class ShareServiceImpl implements ShareService {
     @PreAuthorize("isAuthenticated()")
     @Transactional
     @Override
-    public SharePostResponseDto sharePost(SharePostRequestDto request) {
+    public SharePostResponseDto sharePost(Long postId, SharePostRequestDto request) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         User currentUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
 
-        Post originalPost = postRepository.findById(request.getOriginalPostId())
+        Post originalPost = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ORIGINAL_POST));
 
         originalPost.setShareCount(originalPost.getShareCount() + 1);
@@ -67,24 +67,6 @@ public class ShareServiceImpl implements ShareService {
         responseDto.setContent(newPost.getContent());
         responseDto.setOriginalPost(postSummaryDto);
         return responseDto;
-    }
-
-    @Override
-    public ShareMediaResponseDto getShareMedia(Long id) {
-        Media media = mediaRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Media not found with id: " + id));
-
-        String downloadUrl = media.getPlaybackUrl();
-        if (downloadUrl == null || downloadUrl.isEmpty()) {
-            downloadUrl = media.getSecureUrl();
-        }
-
-        return ShareMediaResponseDto.builder()
-                .id(media.getId())
-                .title(media.getTitle())
-                .singerName(media.getSingerName())
-                .downloadUrl(downloadUrl)
-                .build();
     }
 
 }

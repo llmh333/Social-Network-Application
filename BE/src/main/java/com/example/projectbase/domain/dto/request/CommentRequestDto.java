@@ -16,7 +16,4 @@ public class CommentRequestDto {
     @NotBlank(message = ErrorMessage.NOT_BLANK_FIELD)
     private String content;
 
-    @NotNull(message = ErrorMessage.NOT_BLANK_FIELD)
-    private Long postId;
-
 }

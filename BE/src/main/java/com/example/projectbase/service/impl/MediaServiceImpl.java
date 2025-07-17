@@ -54,40 +54,7 @@ public class MediaServiceImpl implements MediaService {
     private final UserRepository userRepository;
     private final MediaRepository mediaRepository;
     private final MediaMapper mediaMapper;
-    private final VideoProcessingService videoProcessingService;
 
-    @Override
-    public PaginationResponseDto<MediaResponseDto> getAllMedia(PaginationFullRequestDto request) {
-        int pageNum = request.getPageNum();
-        int pageSize = request.getPageSize();
-        String keyword = request.getKeyword();
-
-        Sort sort = Sort.by(request.getSortBy(SortByDataConstant.MEDIA));
-        if (Boolean.FALSE.equals(request.getIsAscending())) {
-            sort = sort.descending();
-        } else {
-            sort = sort.ascending();
-        }
-
-        Pageable pageable = PageRequest.of(pageNum, pageSize, sort);
-
-        Page<Media> mediaPage = mediaRepository.searchMediaByResourceType(keyword, pageable);
-        List<MediaResponseDto> responseDtoList = new ArrayList<>();
-        for (Media media : mediaPage) {
-            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(media);
-            mediaResponseDto.setAuthorId(media.getUser().getId());
-            responseDtoList.add(mediaResponseDto);
-        }
-        PagingMeta pagingMeta = PagingMeta.builder()
-                .pageNum(pageNum + 1)
-                .pageSize(pageSize)
-                .totalPages(mediaPage.getTotalPages())
-                .sortBy(request.getSortBy())
-                .sortType("")
-                .totalElements(mediaPage.stream().count())
-                .build();
-        return new PaginationResponseDto<>(pagingMeta, responseDtoList);
-    }
 
     @Override
     public MediaResponseDto getMediaByPublicId(String publicId) {
@@ -96,28 +63,6 @@ public class MediaServiceImpl implements MediaService {
             throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{publicId});
         }
         return mediaMapper.toMediaResponseDto(media);
-    }
-
-    @Override
-    public PaginationResponseDto<MediaResponseDto> getAudioByTitleOrCategoryOrSinger(PaginationRequestDto paginationRequestDto, String keyword) {
-        int pageNum = paginationRequestDto.getPageNum();
-        int pageSize = paginationRequestDto.getPageSize();
-        Pageable pageable = PageRequest.of(pageNum, pageSize);
-
-        Page<Media> mediaPage = mediaRepository.searchByTitleOrCategoryOrSingerName(keyword, pageable);
-        List<MediaResponseDto> responseDtoList = new ArrayList<>();
-        for (Media media : mediaPage) {
-            MediaResponseDto mediaResponseDto = mediaMapper.toMediaResponseDto(media);
-            mediaResponseDto.setAuthorId(media.getUser().getId());
-            responseDtoList.add(mediaResponseDto);
-        }
-        PagingMeta pagingMeta = PagingMeta.builder()
-                .pageNum(pageNum + 1)
-                .pageSize(pageSize)
-                .totalPages(mediaPage.getTotalPages())
-                .totalElements(mediaPage.stream().count())
-                .build();
-        return new PaginationResponseDto<>(pagingMeta, responseDtoList);
     }
 
     @Transactional
@@ -152,7 +97,6 @@ public class MediaServiceImpl implements MediaService {
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (Exception e) {
-//                    log.info();
                     e.printStackTrace();
                 }
             }
@@ -160,44 +104,5 @@ public class MediaServiceImpl implements MediaService {
             throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{String.valueOf(invalidPublicId)});
         }
         return true;
-    }
-
-    private void validateFile(MultipartFile file) {
-        log.info("validateFile: {}", file.getContentType());
-        String formatFile = file.getContentType();
-        if (formatFile == null || (!formatFile.startsWith("video/") && !formatFile.startsWith("image/") && !formatFile.startsWith("audio/"))) {
-            throw new InvalidException(ErrorMessage.Media.ERR_INVALID_MEDIA_TYPE);
-        }
-        if ((formatFile.startsWith("image/") && file.getSize() > MediaConstant.MAX_SIZE_IMAGE)) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_IMAGE);
-        }
-        if ((formatFile.startsWith("video/") && file.getSize() > MediaConstant.MAX_SIZE_VIDEO)) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
-        }
-        if ((formatFile.startsWith("audio/") && file.getSize() > MediaConstant.MAX_SIZE_AUDIO)) {
-            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
-        }
-    }
-    private String generatePublicIdMedia(MultipartFile file, String typeMedia) {
-        if (typeMedia.equals("video")) {
-            return "video" + System.currentTimeMillis() + file.getName();
-        } else if (typeMedia.equals("image")) {
-            return "image" + System.currentTimeMillis() + file.getName();
-        }
-        return "audio" + System.currentTimeMillis() + file.getName();
-    }
-
-    private Media mediaPending(MultipartFile multipartFile, String typeMedia) {
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-        String publicId = generatePublicIdMedia(multipartFile, typeMedia);
-        Media media = Media.builder()
-                .publicId(publicId)
-                .resourceType(typeMedia)
-                .dataSize(multipartFile.getSize())
-                .status(UploadStatusConstant.PENDING)
-                .user(user)
-                .build();
-        return mediaRepository.save(media);
     }
 }

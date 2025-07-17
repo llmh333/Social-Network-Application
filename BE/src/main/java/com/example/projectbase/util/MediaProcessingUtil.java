@@ -4,6 +4,7 @@ import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.MediaConstant;
 import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.entity.Media;
+import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.exception.InvalidException;
 import com.example.projectbase.exception.MaxUploadSizeMediaException;
@@ -12,13 +13,10 @@ import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
 
-import io.swagger.v3.oas.models.media.MediaType;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.NotNull;
 import java.io.File;
 
 @Log4j2
@@ -54,7 +52,7 @@ public class MediaProcessingUtil {
 
     public static Media createMediaPending(File multipartFile,
                                     String typeMedia,
-                                    @Nullable String title, @Nullable String singerName, @Nullable String category,
+                                    @Nullable String singerName,
                                     MediaRepository mediaRepository,
                                     UserRepository userRepository) {
         try {
@@ -71,9 +69,7 @@ log.info("Creating media pending for type: {}", typeMedia);
                 .dataSize(multipartFile.length())
                 .status(UploadStatusConstant.PENDING)
                 .user(user)
-                .title(title)
                 .singerName(singerName)
-                .category(category)
                 .build();
         log.info("Created media pending successfully");
         return mediaRepository.save(media);

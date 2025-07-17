@@ -8,6 +8,7 @@ import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
+import com.example.projectbase.domain.dto.response.RegisterResponseDto;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,8 +48,8 @@ public class AuthController {
   @Operation(summary = "API Đăng ký tài khoản")
   @PostMapping(UrlConstant.Auth.REGISTER)
   public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto req) {
-    LoginResponseDto tokens = authService.register(req);
-    return VsResponseUtil.success(HttpStatus.CREATED, tokens);
+    RegisterResponseDto response = authService.register(req);
+    return VsResponseUtil.success(HttpStatus.CREATED, response);
   }
 
   @Operation(

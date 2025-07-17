@@ -14,14 +14,6 @@ import java.util.concurrent.ExecutionException;
 
 public interface MediaService {
 
-    public PaginationResponseDto<MediaResponseDto> getAllMedia(PaginationFullRequestDto paginationFullRequestDto);
     public MediaResponseDto getMediaByPublicId(String publicId);
-    public PaginationResponseDto<MediaResponseDto> getAudioByTitleOrCategoryOrSinger(PaginationRequestDto paginationRequestDto, String keyword);
-
-//    public MediaResponseDto uploadVideo(MultipartFile multipartFile) throws IOException, InterruptedException, ExecutionException;
-//    public MediaResponseDto uploadImage(MultipartFile file) throws IOException, InterruptedException;
-//    public List<MediaResponseDto> uploadAudio(MultipartFile audioFile, MultipartFile thumbnailFile, String title, String category, String singerName) throws IOException, InterruptedException, ExecutionException;
-//    public List<MediaResponseDto> uploadMultiImage(List<MultipartFile> file);
-
     public boolean deleteMedia(List<String> publicIdList);
 }

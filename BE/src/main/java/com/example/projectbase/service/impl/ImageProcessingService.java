@@ -39,7 +39,7 @@ public class ImageProcessingService {
     public CompletableFuture<MediaResponseDto> uploadImage(File imageFile, String contentTypeFile) {
         try {
             MediaProcessingUtil.validateFile(imageFile, contentTypeFile);
-            Media imagePending = MediaProcessingUtil.createMediaPending(imageFile, "image", null, null, null, mediaRepository, userRepository);
+            Media imagePending = MediaProcessingUtil.createMediaPending(imageFile, "image", null, mediaRepository, userRepository);
 
             MediaResponseDto responseDto = uploadImageToCloudinary(imageFile, imagePending);
 
@@ -67,7 +67,7 @@ public class ImageProcessingService {
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenApply(v -> futures.stream()
-                        .map(CompletableFuture::join) // nếu bất kỳ future nào lỗi sẽ ném CompletionException tại đây
+                        .map(CompletableFuture::join)
                         .collect(Collectors.toList())
                 );
     }

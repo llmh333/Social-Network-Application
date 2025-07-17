@@ -42,9 +42,8 @@ public class CommentServiceImpl implements CommentService {
     @PreAuthorize("#username == authentication.principal.username")
     @Override
     @Transactional
-    public CommentResponseDto addComment(CommentRequestDto requestDto, String username) {
+    public CommentResponseDto addComment(Long postId, CommentRequestDto requestDto, String username) {
 
-        Long postId = requestDto.getPostId();
         log.info("Adding comment to post {} by user {}", postId, username);
 
         Post post = postRepository.findById(postId)
@@ -62,20 +61,19 @@ public class CommentServiceImpl implements CommentService {
         return commentResponseDto;
     }
 
-    @PreAuthorize("#username == authentication.principal.username")
+    @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional
-    public CommentResponseDto replyToComment(ReplyCommentRequestDto requestDto, String username) {
-        Long postId = requestDto.getPostId();
-        Long parentId = requestDto.getParentId();
-        log.info("Adding reply to comment {} on post {} by user {}", parentId, postId, username);
+    public CommentResponseDto replyToComment(Long postId, ReplyCommentRequestDto requestDto, String username) {
+        Long parentCommentId = requestDto.getParenCommentId();
+        log.info("Adding reply to comment {} on post {} by user {}", parentCommentId, postId, username);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
-        Comment parent = commentRepository.findById(parentId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Comment.ERR_PARENT_COMMENT_NOT_FOUND, new String[]{String.valueOf(parentId)}));
+        Comment parent = commentRepository.findById(parentCommentId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Comment.ERR_PARENT_COMMENT_NOT_FOUND, new String[]{String.valueOf(parentCommentId)}));
 
         if (!parent.getPost().getId().equals(postId)) {
             throw new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_COMMENT_IN_POST, new String[]{String.valueOf(parent.getId()), String.valueOf(post.getId())});
@@ -89,7 +87,7 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentResponseDto(savedReply);
     }
 
-    @PreAuthorize("#username == authentication.principal.username")
+    @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional
     public CommentResponseDto updateComment(Long commentId, String content, Long postId, String username) {
@@ -138,7 +136,9 @@ public class CommentServiceImpl implements CommentService {
     @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional(readOnly = true)
-    public List<CommentResponseDto> getRepliesByParentId(Long parentId) {
+    public List<CommentResponseDto> getRepliesByParentId(Long postId, Long parentId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         log.debug("Getting replies for parent comment {}", parentId);
         return commentRepository.findByParentIdOrderByCreatedAtAsc(parentId)
                 .stream()
@@ -149,7 +149,10 @@ public class CommentServiceImpl implements CommentService {
     @PreAuthorize("isAuthenticated()")
     @Override
     @Transactional(readOnly = true)
-    public CommentResponseDto getCommentWithReplies(Long commentId) {
+    public CommentResponseDto getCommentWithReplies(Long postId, Long commentId) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
         log.info("Getting comment with replies for comment {}", commentId);
         Comment comment = commentRepository.findById(commentId).orElseThrow(
                 () -> new NotFoundException(ErrorMessage.Comment.ERR_NOT_FOUND_ID, new String[]{String.valueOf(commentId)})

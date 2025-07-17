@@ -49,64 +49,6 @@ import java.util.concurrent.ExecutionException;
 public class MediaController {
 
     private final MediaService mediaService;
-    private final VideoProcessingService videoProcessingService;
-    private final MediaRepository mediaRepository;
-    private final MediaMapper mediaMapper;
-
-//    @Operation(summary = "API Upload Video")
-//    @PostMapping(value = UrlConstant.Media.UPLOAD_MEDIA_VIDEO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<?> uploadVideo(@RequestPart("file") MultipartFile multipartFile) throws IOException, InterruptedException, ExecutionException {
-//        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_VIDEO) {
-//            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_VIDEO);
-//        }
-//        MediaResponseDto responseDto = mediaService.uploadVideo(multipartFile);
-//        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
-//    }
-
-//    @Operation(summary = "API Upload Audio")
-//    @PostMapping(value =UrlConstant.Media.UPLOAD_MEDIA_AUDIO, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<?> uploadAudio(@RequestParam("file") MultipartFile multipartFile,
-//                                         @Valid @RequestParam("title") String title,
-//                                         @Valid @RequestParam("category") String category,
-//                                         @Valid @RequestParam("singer") String singerName) throws IOException, InterruptedException {
-//        if (multipartFile.getSize() > MediaConstant.MAX_SIZE_AUDIO) {
-//            throw new MaxUploadSizeMediaException(ErrorMessage.Media.ERR_MAX_SIZE_UPLOAD_AUDIO);
-//        }
-//        MediaResponseDto responseDto = mediaService.uploadAudio(multipartFile, title, category, singerName);
-//        return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
-//    }
-
-//    @Operation(summary = "API Upload Multi Image")
-//    @PostMapping(value = UrlConstant.Media.UPLOAD_MULTI_MEDIA_IMAGE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<?> uploadMultiImage(@RequestParam("file") List<MultipartFile> file) {
-//        List<MediaResponseDto> mediaResponseDtos = mediaService.uploadMultiImage(file);
-//        return VsResponseUtil.success(HttpStatus.CREATED, mediaResponseDtos);
-//    }
-
-    @Operation(summary = "API Get Media")
-    @GetMapping(UrlConstant.Media.GET_MEDIA_BY_RESOURCE_TYPE)
-    public ResponseEntity<?> getAllMedia(@Valid @ParameterObject PaginationFullRequestDto paginationFullRequestDto) {
-        PaginationResponseDto responseDto = mediaService.getAllMedia(paginationFullRequestDto);
-        if (responseDto == null) {
-            return VsResponseUtil.error(HttpStatus.BAD_REQUEST, ErrorMessage.Media.ERR_NOT_FOUND_MEDIA);
-        }
-        return VsResponseUtil.success(HttpStatus.OK,responseDto);
-    }
-
-    @Operation(summary = "API Get Media bàng public ID")
-    @GetMapping(UrlConstant.Media.GET_MEDIA_BY_PUBLIC_ID)
-    public ResponseEntity<?> getMediaByPublicId(@Valid @PathVariable String publicId) {
-        MediaResponseDto responseDto = mediaService.getMediaByPublicId(publicId);
-        return VsResponseUtil.success(HttpStatus.OK,responseDto);
-    }
-
-    @Operation(summary = "API tìm kiếm nhạc theo title hoặc category")
-    @GetMapping(UrlConstant.Media.GET_AUDIO_BY_TITLE_OR_CATEGORY_OR_SINGER)
-    public ResponseEntity<?> getAudioByTitleOrCategory(@Valid @ParameterObject PaginationRequestDto paginationRequestDto,
-                                                       @RequestParam("keyword") String keyword) {
-        PaginationResponseDto responseDto = mediaService.getAudioByTitleOrCategoryOrSinger(paginationRequestDto, keyword);
-        return VsResponseUtil.success(HttpStatus.OK, responseDto);
-    }
 
     @Operation(summary = "API Delete Media")
     @DeleteMapping(UrlConstant.Media.DELETE_MEDIA)

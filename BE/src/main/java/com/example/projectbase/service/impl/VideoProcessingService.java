@@ -6,6 +6,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
+import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.repository.MediaRepository;
@@ -15,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,7 +41,7 @@ public class VideoProcessingService {
     public CompletableFuture<MediaResponseDto> uploadVideo(File videoFile, String contentTypeFile) {
         try {
             MediaProcessingUtil.validateFile(videoFile, contentTypeFile);
-            Media mediaPending = MediaProcessingUtil.createMediaPending(videoFile, "video", null, null, null, mediaRepository, userRepository);
+            Media mediaPending = MediaProcessingUtil.createMediaPending(videoFile, "video", null, mediaRepository, userRepository);
 
             return compressVideo(videoFile, mediaPending)
                     .thenApply(compressFile -> {

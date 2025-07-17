@@ -1,6 +1,6 @@
 package com.example.projectbase.domain.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.example.projectbase.domain.entity.PostCategory;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -15,12 +15,6 @@ public class MediaResponseDto {
 
     private String publicId;
     private String secureUrl;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String title;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String category;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String playbackUrl;

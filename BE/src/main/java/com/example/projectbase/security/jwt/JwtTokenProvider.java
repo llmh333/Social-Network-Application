@@ -100,6 +100,9 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
+            if (token == null) {
+                throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
+            }
             boolean checkTokenBlacklist = TokenBlacklistUtil.isTokenBlacklisted(token, tokenBlacklistRepository);
             if (checkTokenBlacklist) {
                 throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
@@ -115,7 +118,7 @@ public class JwtTokenProvider {
         } catch (ExpiredJwtException ex) {
             log.error("Expired JWT token");
             TokenBlacklistUtil.addTokenToBlacklist(token, "Expired JWT token", tokenBlacklistRepository);
-            throw new UnauthorizedException(ErrorMessage.Auth.EXPIRED_REFRESH_TOKEN);
+            throw new UnauthorizedException(ErrorMessage.Auth.EXPIRED_ACCESS_TOKEN);
         }
     }
 

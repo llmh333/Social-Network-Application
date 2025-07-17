@@ -24,10 +24,6 @@ public class Media extends DateAuditing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
-
-    private String category;
-
     @Column(name = "singer_name")
     private String singerName;
 

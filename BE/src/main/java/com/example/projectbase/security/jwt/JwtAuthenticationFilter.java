@@ -2,6 +2,7 @@ package com.example.projectbase.security.jwt;
 
 import com.example.projectbase.base.RestData;
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.service.CustomUserDetailsService;
 import com.example.projectbase.util.BeanUtil;
@@ -53,6 +54,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             String message = messageSource.getMessage(e.getMessage(), null, LocaleContextHolder.getLocale());
+            response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(message)));
+            return;
+        } catch (NotFoundException ex) {
+            MessageSource messageSource = BeanUtil.getBean(MessageSource.class);
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            String message = messageSource.getMessage(ex.getMessage(), null, LocaleContextHolder.getLocale());
             response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(message)));
             return;
         }

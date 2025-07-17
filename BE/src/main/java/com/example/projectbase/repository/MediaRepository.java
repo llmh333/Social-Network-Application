@@ -16,12 +16,6 @@ import java.util.Optional;
 @Repository
 public interface MediaRepository extends JpaRepository<Media, Long> {
 
-    @Query("select u from Media u where LOWER(trim(u.resourceType)) = LOWER(trim(:keyword))")
-    Page<Media> searchMediaByResourceType(@Param("keyword") String keyword, Pageable pageable);
-
-    @Query("SELECT u FROM Media u WHERE u.resourceType = 'audio' AND (LOWER(u.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.category) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.singerName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Media> searchByTitleOrCategoryOrSingerName(String keyword, Pageable pageable);
-
     List<Media> findAllByPublicIdIn(List<String> publicIds);
 
     void deleteAllByPublicIdIn(List<String> publicIds);
