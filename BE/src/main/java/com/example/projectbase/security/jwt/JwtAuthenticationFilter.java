@@ -1,7 +1,6 @@
 package com.example.projectbase.security.jwt;
 
 import com.example.projectbase.base.RestData;
-import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.service.CustomUserDetailsService;
@@ -39,8 +38,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @SneakyThrows
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
+
+        final String requestURI = request.getRequestURI();
+        log.info("Request URI: {}", requestURI);
+
+        if (requestURI.startsWith("/api/v1/auth/") ||
+                requestURI.startsWith("/api/v1/forgot-password/") ||
+                requestURI.startsWith("/swagger-ui") ||
+                requestURI.startsWith("/v3/api-docs") ||
+                requestURI.startsWith("/swagger-ui.html") ||
+                requestURI.startsWith("/login/oauth2/") ||
+                requestURI.startsWith("/api/v1/oauth2/info/")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             String jwt = getJwtFromRequest(request);
+            log.info("JWT: {}", jwt);
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String userId = tokenProvider.extractSubjectFromJwt(jwt);
                 UserDetails userDetails = customUserDetailsService.loadUserById(userId);

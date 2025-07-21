@@ -38,7 +38,8 @@ public class OtpForgotPasswordServiceImpl implements OtpForgotPasswordService {
 
     @Override
     public boolean sendOtpForgotPassword(String receivedEmail) {
-        User user = userRepository.findByEmail(receivedEmail).orElseThrow(()->new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_EMAIL, new String[]{receivedEmail}));
+        User user = userRepository.findByEmail(receivedEmail)
+                .orElseThrow(()->new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_EMAIL, new String[]{receivedEmail}));
         String fullName = user.getFirstName() + " " + user.getLastName();
         String otpCode = generateOtpCode(receivedEmail);
         Context context = new Context();
@@ -109,7 +110,6 @@ public class OtpForgotPasswordServiceImpl implements OtpForgotPasswordService {
     }
 
     private String generateOtpCode(String receivedEmail) {
-        log.info("generating OtpCode for email: {}", receivedEmail);
         OtpForgotPassword otpForgotPassword = otpForgotPasswordRepository.findByEmail(receivedEmail);
         if (otpForgotPassword != null) {
             if (otpForgotPassword.getExpiryDate().isBefore(LocalDateTime.now())) {
@@ -120,7 +120,6 @@ public class OtpForgotPasswordServiceImpl implements OtpForgotPasswordService {
         }
         secureRandom.setSeed(System.currentTimeMillis());
         int otpCode = secureRandom.nextInt(9999);
-        log.info("generated OtpCode: {}", String.format("%04d", otpCode));
         return String.format("%04d", otpCode);
     }
 

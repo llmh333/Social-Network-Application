@@ -1,6 +1,5 @@
 package com.example.projectbase.service.impl;
 
-import com.example.projectbase.config.RedisConfig;
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.RoleConstant;
 import com.example.projectbase.constant.UserStatus;
@@ -49,10 +48,7 @@ import org.springframework.util.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -75,7 +71,6 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public RegisterResponseDto register(RegisterRequestDto req) {
-    try {
       if (userRepository.existsByUsername(req.getUsername())) {
           throw new ConflictException(ErrorMessage.Auth.ERR_ALREADY_EXISTS_USERNAME);
       }
@@ -96,10 +91,6 @@ public class AuthServiceImpl implements AuthService {
       );
 
       return userMapper.toRegisterDto(userRepository.save(user));
-  } catch (Exception ex) {
-    logger.error("Register failed", ex);
-    throw new BadRequestException(ErrorMessage.ERR_EXCEPTION_GENERAL);
-  }
   }
 
 
@@ -222,8 +213,11 @@ public class AuthServiceImpl implements AuthService {
 
 
   @Scheduled(fixedRate = 7 * 60 * 1000L)
+  @Transactional
   public void checkUserStatus() {
+    logger.info("Checking user status");
     Set<String> keys = redisTemplate.keys("username:*:session");
+    List<String> usernamesToDeactivate = new ArrayList<>();
     try {
       for (String key : keys) {
         String username = key.substring(key.indexOf(":") + 1, key.lastIndexOf(":"));
@@ -234,21 +228,28 @@ public class AuthServiceImpl implements AuthService {
         String lastActivityStr = (String) sessionMap.get("last_activity");
         LocalDateTime lastActivity = LocalDateTime.parse(lastActivityStr);
         Duration duration = Duration.between(lastActivity, now);
+
         if (duration.toMinutes() >= 10 && duration.toMinutes() <= 15) {
           sessionMap.put("status", UserStatus.BUSY.name());
         } else if (duration.toMinutes() > 15) {
           sessionMap.put("status", UserStatus.OFFLINE.name());
-          UserSession userSession = userSessionRepository.findByUsername(username);
-          if (userSession != null) {
-            userSession.setIsActive(false);
-            userSessionRepository.save(userSession);
-          }
+          usernamesToDeactivate.add(username);
         }
+
         String updatedJson = objectMapper.writeValueAsString(sessionMap);
         redisService.save("username:" + username + ":session", updatedJson);
       }
+
+      if (!usernamesToDeactivate.isEmpty()) {
+        // Gọi một phương thức repository để cập nhật tất cả trong một lần
+        userSessionRepository.deactivateUsers(usernamesToDeactivate);
+      }
+
+      logger.info("Checked user status");
     } catch (JsonProcessingException ex) {
 
+    } catch (Exception ex) {
+      ex.printStackTrace();
     }
 
   }

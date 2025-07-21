@@ -52,14 +52,15 @@ public class MediaProcessingUtil {
 
     public static Media createMediaPending(File multipartFile,
                                     String typeMedia,
+                                    String userId,
                                     @Nullable String singerName,
                                     MediaRepository mediaRepository,
                                     UserRepository userRepository) {
         try {
 log.info("Creating media pending for type: {}", typeMedia);
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         log.info("Successfully get user principal");
-        User user = userRepository.findById(userPrincipal.getId()).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
         log.info("current user: {}", user.toString());
         String publicId = generatePublicIdMedia(multipartFile, typeMedia);
         log.info("Generated publicId: {}", publicId);

@@ -2,22 +2,21 @@ package com.example.projectbase.service.impl;
 
 import com.example.projectbase.constant.CommonConstant;
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.constant.PostStatusConstant;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
-import com.example.projectbase.domain.dto.response.MediaResponseDto;
+import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
 import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.entity.Post;
-import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.PostMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.PostCategoryRepository;
-import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.PostRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
@@ -27,18 +26,22 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -48,20 +51,22 @@ import java.util.stream.Collectors;
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
-    private final MediaRepository mediaRepository;
+    private final AwsS3ServiceImpl awsS3Service;
     private final PostCategoryRepository postCategoryRepository;
-    private final VideoProcessingService videoProcessingService;
-    private final AudioProcessingService audioProcessingService;
-    private final ImageProcessingService imageProcessingService;
     private final RedisServiceImpl redisService;
     private final PostCategoryServiceImpl postCategoryService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final PostMapper postMapper;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
+    @Value("${app.kafka.request-topic}")
+    private String requestTopic;
 
     @PreAuthorize("isAuthenticated()")
     @Override
-    public PostResponseDto createPost(PostRequestDto requestDto, List<File> files, List<String> contentTypeFileList) {
+    public PostResponseDto createPost(PostRequestDto requestDto, List<File> files, List<MultipartFile> multipartFiles, List<String> contentTypeFileList) throws JsonProcessingException, ExecutionException, InterruptedException, TimeoutException {
+
         if (!files.get(0).isFile()) {
             throw new BadRequestException(ErrorMessage.Post.ERR_FILES_NULL);
         }
@@ -74,42 +79,31 @@ public class PostServiceImpl implements PostService {
             }
         }
 
+        AwsS3ResponseDto awsS3ResponseDto = awsS3Service.uploadMultiFile(files);
+        awsS3ResponseDto.setType(requestDto.getMediaType().toString().toLowerCase());
+
         PostCategory postCategory = postCategoryService.createPostCategory(requestDto.getCategory());
 
-        Post post = postRepository.save(buildPostFromDto(requestDto, postCategory));
+        Post post = buildPostFromDto(requestDto, postCategory);
+        post.setStatus(PostStatusConstant.PENDING_MODERATION);
+        Post savedPost = postRepository.save(post);
 
-        processAndSaveMediaAsync(post, requestDto, files, contentTypeFileList);
-        log.info("Post created: {}", post.toString());
-        return postMapper.toPostResponseDto(post);
 
-    }
+        log.info("Đã tạo Post với trạng thái PENDING_MODERATION, postId: {}", savedPost.getId());
 
-    public CompletableFuture<Void> processAndSaveMediaAsync(Post post, PostRequestDto requestDto, List<File> files, List<String> contentTypeFileList) {
-        switch (requestDto.getMediaType()) {
-            case IMAGE:
-                return imageProcessingService.uploadMultipleImages(files, contentTypeFileList)
-                        .thenAccept(imageResponseDtos -> {
-                            imageResponseDtos.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
-                        });
-            case VIDEO:
-                if (files.size() != 1) {
-                    throw new BadRequestException(ErrorMessage.Media.ERR_VIDEO_NOT_MULTIPLE_NOT_ALLOWED);
-                }
+        Map<String, Object> moderationRequest = new HashMap<>();
+        moderationRequest.put("postId", savedPost.getId().toString());
+        moderationRequest.put("type", requestDto.getMediaType().toString().toUpperCase());
+        moderationRequest.put("s3Urls", awsS3ResponseDto.getUrls());
+        moderationRequest.put("contentType", contentTypeFileList);
+        moderationRequest.put("singer_name", requestDto.getSingerName());
 
-                return videoProcessingService.uploadVideo(files.get(0), contentTypeFileList.get(0)).thenAccept(dto -> saveMediaToPost(post, dto));
-            case AUDIO:
-                if (files.size() != 2) {
-                    throw new BadRequestException(ErrorMessage.Media.ERR_AUDIO_UPLOAD_FORMAT);
-                }
+        String payload = objectMapper.writeValueAsString(moderationRequest);
+        kafkaTemplate.send(requestTopic, payload);
+        log.info("Đã gửi yêu cầu kiểm duyệt cho postId: {}", savedPost.getId());
 
-                return audioProcessingService.uploadAudio(files.get(0), files.get(1), contentTypeFileList, requestDto.getSingerName())
-                        .thenAccept(audioResponseDtos -> {
-                            audioResponseDtos.forEach(mediaDto -> saveMediaToPost(post, mediaDto));
-                        }
-                );
-            default:
-                return CompletableFuture.completedFuture(null);
-        }
+        return postMapper.toPostResponseDto(savedPost);
+
     }
 
     @PreAuthorize("isAuthenticated() and @postServiceImpl.isOwner(#postId, authentication.username)")
@@ -199,20 +193,6 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-    private void saveMediaToPost(Post post, MediaResponseDto dto) {
-
-        if (post.getMediaList() == null) {
-            post.setMediaList(new ArrayList<>());
-        }
-
-        Media media = mediaRepository.findMediaByPublicId(dto.getPublicId());
-        if (media == null) {
-            throw new NotFoundException(ErrorMessage.Media.ERR_NOT_FOUND_MEDIA, new String[]{dto.getPublicId()});
-        }
-        media.setPost(post);
-        post.getMediaList().add(media);
-        mediaRepository.save(media);
-    }
 
     private Post findPostOrThrow(Long id) {
         return postRepository.findById(id)
