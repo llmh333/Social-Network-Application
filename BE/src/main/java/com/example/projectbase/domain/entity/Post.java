@@ -1,6 +1,7 @@
 package com.example.projectbase.domain.entity;
 
 import com.example.projectbase.constant.MediaType;
+import com.example.projectbase.constant.PostStatusConstant;
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -43,7 +44,7 @@ public class Post extends DateAuditing {
     @Enumerated(EnumType.STRING)
     private MediaType mediaType;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Media> mediaList = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
@@ -64,6 +65,10 @@ public class Post extends DateAuditing {
     @CreatedBy
     @Column(name = "created_by")
     private String createdBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private PostStatusConstant status;
 
     @PrePersist
     public void prePersist() {

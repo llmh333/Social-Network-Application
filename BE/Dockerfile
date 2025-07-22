@@ -15,7 +15,9 @@ RUN apk update && apk add --no-cache ffmpeg
 WORKDIR /app
 
 # Copy JAR và set ownership
-COPY --from=build --chown=appuser:appuser /app/target/*.jar app.jar
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+COPY --from=build /app/target/*.jar app.jar
 
 # JVM flags tối ưu cho container
 ENTRYPOINT ["java", \

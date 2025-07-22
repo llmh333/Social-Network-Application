@@ -59,6 +59,7 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_ORIGINAL_POST = "exception.post.not.found.original";
     public static final String ERR_FILES_NULL = "exception.files.null";
     public static final String ERR_FILES_INVALID_FORMAT = "exception.files.invalid.format";
+    public static final String ERR_FILES_NSFW = "exception.files.nsfw";
   }
 
   public static class Reaction {

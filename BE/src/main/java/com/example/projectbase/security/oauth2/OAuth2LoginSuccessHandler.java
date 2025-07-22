@@ -2,6 +2,7 @@ package com.example.projectbase.security.oauth2;
 
 import com.example.projectbase.base.RestData;
 import com.example.projectbase.constant.ErrorMessage;
+import com.example.projectbase.constant.UserStatus;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.entity.UserSession;
 import com.example.projectbase.exception.ConflictException;
@@ -11,6 +12,7 @@ import com.example.projectbase.repository.UserSessionRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.service.impl.OAuthServiceImpl;
+import com.example.projectbase.service.impl.RedisServiceImpl;
 import com.example.projectbase.util.BeanUtil;
 import com.example.projectbase.util.TokenBlacklistUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +46,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -54,14 +59,16 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final OAuthServiceImpl oAuthService;
+    private final RedisServiceImpl redisService;
     private final UserSessionRepository userSessionRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication)
-            throws IOException, ServletException {
+            throws IOException {
 
         OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
 
@@ -102,6 +109,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             userSession.setIsActive(true);
         }
         userSessionRepository.save(userSession);
+
+        log.info("Starting creating data user {} on redis", userPrincipal.getUsername());
+        Map<String, Object> dataSession = new HashMap<>();
+        dataSession.put("username", userPrincipal.getUsername());
+        dataSession.put("status", UserStatus.ONLINE.name());
+        dataSession.put("last_activity", LocalDateTime.now());
+        String json = objectMapper.writeValueAsString(dataSession);
+        redisService.save("username:"+userPrincipal.getUsername()+":session", json);
+        log.info("Creating data user {} on redis successfully", userPrincipal.getUsername());
 
         Cookie accessCookie = new Cookie("accessToken", accessToken);
         accessCookie.setHttpOnly(true);
