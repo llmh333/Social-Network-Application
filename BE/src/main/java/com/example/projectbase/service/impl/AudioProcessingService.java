@@ -6,7 +6,6 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
-import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.repository.MediaRepository;
@@ -40,14 +39,14 @@ public class AudioProcessingService {
     private final ImageProcessingService imageProcessingService;
 
     @Async("audioProcessingExecutor")
-    public CompletableFuture<List<MediaResponseDto>> uploadAudio(File audioFile, File thumbnailFile, List<String> contentTypeFileList, String singerName) {
+    public CompletableFuture<List<MediaResponseDto>> uploadAudio(File audioFile, File thumbnailFile, List<String> contentTypeFileList, String singerName, String userId) {
         try {
             MediaProcessingUtil.validateFile(audioFile, contentTypeFileList.get(0));
-            Media audioPending = MediaProcessingUtil.createMediaPending(audioFile, "audio", singerName, mediaRepository, userRepository);
+            Media audioPending = MediaProcessingUtil.createMediaPending(audioFile, "audio",userId,  singerName, mediaRepository, userRepository);
 
             return compressAudioAsync(audioFile,audioPending).thenApply(compressedFile -> {
                 try {
-                    List<MediaResponseDto> responseDtoList = uploadAudioToCloudinary(compressedFile, thumbnailFile, contentTypeFileList.get(1), audioPending);
+                    List<MediaResponseDto> responseDtoList = uploadAudioToCloudinary(compressedFile, thumbnailFile, contentTypeFileList.get(1), audioPending, userId);
                     return responseDtoList;
                 } catch (ExecutionException e) {
                     log.info("Error executor in method audioUpload: {}", e.getCause());
@@ -131,11 +130,11 @@ public class AudioProcessingService {
         }
     }
 
-    private List<MediaResponseDto> uploadAudioToCloudinary(File compressedFile, File thumbnailFile, String contentTypeFile, Media audioUpload) throws ExecutionException, InterruptedException {
+    private List<MediaResponseDto> uploadAudioToCloudinary(File compressedFile, File thumbnailFile, String contentTypeFile, Media audioUpload, String userId) throws ExecutionException, InterruptedException {
 
         log.info("Uploading audio to cloudinary");
         List<MediaResponseDto> responseDtoList = new ArrayList<>();
-        CompletableFuture<MediaResponseDto> uploadThumbnail = imageProcessingService.uploadImage(thumbnailFile, contentTypeFile);
+        CompletableFuture<MediaResponseDto> uploadThumbnail = imageProcessingService.uploadImage(thumbnailFile, contentTypeFile, userId);
         MediaResponseDto thumbnailResult = uploadThumbnail.get();
         responseDtoList.add(thumbnailResult);
         try {

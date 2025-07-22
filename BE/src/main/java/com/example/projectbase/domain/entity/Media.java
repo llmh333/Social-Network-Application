@@ -58,7 +58,7 @@ public class Media extends DateAuditing {
     @JsonIgnore
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "post_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_MEDIA_POT"))
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;

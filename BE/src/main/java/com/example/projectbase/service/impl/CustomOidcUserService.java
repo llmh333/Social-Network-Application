@@ -1,8 +1,6 @@
 package com.example.projectbase.service.impl;
 
-import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.domain.entity.User;
-import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.OidcUserPrincipal;

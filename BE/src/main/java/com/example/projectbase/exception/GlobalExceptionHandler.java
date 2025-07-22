@@ -137,14 +137,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BadRequestException.class)
   public ResponseEntity<RestData<?>> handleBadRequestException(BadRequestException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message, ex);
+    log.warn(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
   @ExceptionHandler(MaxUploadSizeMediaException.class)
   public ResponseEntity<RestData<?>> handleMaxUploadSizeMediaException(MaxUploadSizeMediaException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
-    log.error(message);
+    log.warn(message);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 }

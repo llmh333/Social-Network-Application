@@ -6,7 +6,6 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
-import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.repository.MediaRepository;
@@ -38,10 +37,10 @@ public class VideoProcessingService {
     private final UserRepository userRepository;
 
     @Async("videoProcessingExecutor")
-    public CompletableFuture<MediaResponseDto> uploadVideo(File videoFile, String contentTypeFile) {
+    public CompletableFuture<MediaResponseDto> uploadVideo(File videoFile, String contentTypeFile, String userId) {
         try {
             MediaProcessingUtil.validateFile(videoFile, contentTypeFile);
-            Media mediaPending = MediaProcessingUtil.createMediaPending(videoFile, "video", null, mediaRepository, userRepository);
+            Media mediaPending = MediaProcessingUtil.createMediaPending(videoFile, "video", userId, null, mediaRepository, userRepository);
 
             return compressVideo(videoFile, mediaPending)
                     .thenApply(compressFile -> {

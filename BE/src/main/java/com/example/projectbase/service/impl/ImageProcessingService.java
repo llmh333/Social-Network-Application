@@ -2,20 +2,17 @@ package com.example.projectbase.service.impl;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.example.projectbase.constant.MediaType;
 import com.example.projectbase.constant.UploadStatusConstant;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.entity.Media;
 import com.example.projectbase.domain.mapper.MediaMapper;
 import com.example.projectbase.repository.MediaRepository;
 import com.example.projectbase.repository.UserRepository;
-import com.example.projectbase.service.MediaService;
 import com.example.projectbase.util.MediaProcessingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,10 +33,10 @@ public class ImageProcessingService {
     private final MediaMapper mediaMapper;
 
     @Async("imageProcessingExecutor")
-    public CompletableFuture<MediaResponseDto> uploadImage(File imageFile, String contentTypeFile) {
+    public CompletableFuture<MediaResponseDto> uploadImage(File imageFile, String contentTypeFile, String userId) {
         try {
             MediaProcessingUtil.validateFile(imageFile, contentTypeFile);
-            Media imagePending = MediaProcessingUtil.createMediaPending(imageFile, "image", null, mediaRepository, userRepository);
+            Media imagePending = MediaProcessingUtil.createMediaPending(imageFile, "image", userId, null, mediaRepository, userRepository);
 
             MediaResponseDto responseDto = uploadImageToCloudinary(imageFile, imagePending);
 
@@ -52,7 +49,7 @@ public class ImageProcessingService {
     }
 
     @Async("imageProcessingExecutor")
-    public CompletableFuture<List<MediaResponseDto>> uploadMultipleImages(List<File> imageFiles, List<String> contentTypeFileList) {
+    public CompletableFuture<List<MediaResponseDto>> uploadMultipleImages(List<File> imageFiles, List<String> contentTypeFileList, String userId) {
 
         List<CompletableFuture<MediaResponseDto>> futures = new ArrayList<>();
 
@@ -62,7 +59,7 @@ public class ImageProcessingService {
                     ? contentTypeFileList.get(i)
                     : null;
 
-            futures.add(uploadImage(imageFile, contentType));
+            futures.add(uploadImage(imageFile, contentType, userId));
         }
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))

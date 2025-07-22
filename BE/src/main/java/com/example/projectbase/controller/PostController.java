@@ -6,9 +6,13 @@ import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
+import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
 import com.example.projectbase.exception.MaxUploadSizeMediaException;
+import com.example.projectbase.service.AwsS3Service;
 import com.example.projectbase.service.PostService;
+import com.example.projectbase.service.impl.AwsS3ServiceImpl;
+import com.example.projectbase.service.impl.KafkaProducerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +39,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @RestController
@@ -72,19 +77,18 @@ public class PostController {
                     description = "Danh sách file upload",
                     required = true
             )
-            @RequestPart("files") List<MultipartFile> files) throws IOException {
+            @RequestPart("files") List<MultipartFile> files) throws IOException, ExecutionException, InterruptedException, TimeoutException {
         log.info("transfer To original File");
         List<File> copiedFiles = new ArrayList<>();
         List<String> contentTypeList = new ArrayList<>();
         for (MultipartFile multipartFile : files) {
             contentTypeList.add(multipartFile.getContentType());
-            File tempFile = File.createTempFile("_upload_", multipartFile.getName());
+            File tempFile = File.createTempFile("_upload_", multipartFile.getOriginalFilename());
             multipartFile.transferTo(tempFile);
             copiedFiles.add(tempFile);
         }
-
         log.info("successfully transfer To original File");
-        PostResponseDto responseDto = postService.createPost(requestDto, copiedFiles, contentTypeList);
+        PostResponseDto responseDto = postService.createPost(requestDto, copiedFiles, files, contentTypeList);
         return VsResponseUtil.success(HttpStatus.CREATED, responseDto);
     }
 
@@ -105,7 +109,7 @@ public class PostController {
     }
 
     @GetMapping(path =  UrlConstant.Post.GET_TRENDING_POST)
-    public ResponseEntity<?> getTrendingPost(@RequestBody @Valid PaginationFullRequestDto request) throws JsonProcessingException {
+    public ResponseEntity<?> getTrendingPost(@ModelAttribute @Valid PaginationFullRequestDto request) throws JsonProcessingException {
         PaginationResponseDto<PostResponseDto> response = postService.getPostsTrendingForUser(request);
         return VsResponseUtil.success(HttpStatus.OK, response);
     }
