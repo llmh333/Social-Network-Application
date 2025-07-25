@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @AllArgsConstructor
@@ -13,7 +15,7 @@ import java.util.Set;
 @Setter
 @Builder
 @Entity
-@Table(name = "roles")
+@Table(name = "role")
 public class Role {
 
   @Id
@@ -28,4 +30,7 @@ public class Role {
   @JsonIgnore
   private Set<User> users = new HashSet<>();
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_id"))
+  private List<String> permissions = new ArrayList<>();
 }

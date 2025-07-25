@@ -1,16 +1,38 @@
 package com.example.projectbase.aop.aspect;
 
+import com.example.projectbase.service.PostCategoryService;
+import com.example.projectbase.service.UserSessionService;
+import com.example.projectbase.service.impl.PostCategoryServiceImpl;
+import com.example.projectbase.service.impl.UserSessionServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
 @Aspect
 @Configuration
 @Slf4j
+@RequiredArgsConstructor
 public class RepositoryAspect {
+
+  private final UserSessionServiceImpl userSessionService;
+  private final PostCategoryServiceImpl postCategoryService;
+
+  private static final String CONTROLLER_POINTCUT =
+          "execution(* com.example.projectbase.controller.ReactionController.*(..)) || " +
+          "execution(* com.example.projectbase.controller.CommentController.*(..)) || " +
+          "execution(* com.example.projectbase.controller.ShareController.*(..))";
 
   @Value("${application.repository.query-limit-warning-ms:60}")
   private int executionLimitMs;
@@ -27,4 +49,52 @@ public class RepositoryAspect {
     return proceed;
   }
 
+  @Before("execution(* com.example.projectbase.controller.*.*(..))")
+  public void updateLastActivity() {
+    try {
+      log.info("Updating last activity for user");
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      if (authentication != null && authentication.isAuthenticated()) {
+        String userId = authentication.getName();
+        userSessionService.updateLastActivity(userId);
+      }
+    } catch (Exception e) {
+      log.error("Failed to update last activity", e);
+    }
+  }
+
+  @AfterReturning(pointcut = CONTROLLER_POINTCUT)
+  public void updateInteractionCount(JoinPoint joinPoint) {
+    Long postId = extractPostIdFromJoinPoint(joinPoint);
+
+    if (postId != null) {
+      postCategoryService.increaseInteractCategoryCount(postId);
+      postCategoryService.updateTrendingCategoryOnRedis(postId);
+    } else {
+        log.warn("Could not extract postId from method: {}", joinPoint.getSignature().getName());
+    }
+  }
+
+  private Long extractPostIdFromJoinPoint(JoinPoint joinPoint) {
+    MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+    Method method = signature.getMethod();
+    Object[] args = joinPoint.getArgs();
+    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+
+    for (int i = 0; i < parameterAnnotations.length; i++) {
+      for (Annotation annotation : parameterAnnotations[i]) {
+
+        if (annotation instanceof PathVariable) {
+          PathVariable pathVariable = (PathVariable) annotation;
+          if ("postId".equals(pathVariable.value()) || "postId".equals(pathVariable.name())) {
+            if (args[i] instanceof Long) {
+              return (Long) args[i];
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }
 }

@@ -1,16 +1,19 @@
 package com.example.projectbase.service;
 
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
+import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
 import com.example.projectbase.domain.dto.response.CommonResponseDto;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
+import com.example.projectbase.domain.dto.response.RegisterResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 
 import javax.servlet.http.HttpServletRequest;
 
 public interface AuthService {
+  RegisterResponseDto register(RegisterRequestDto request);
 
-  LoginResponseDto login(LoginRequestDto request);
+  LoginResponseDto login(LoginRequestDto request, HttpServletRequest httpServletRequest);
 
   TokenRefreshResponseDto refresh(TokenRefreshRequestDto request);
 

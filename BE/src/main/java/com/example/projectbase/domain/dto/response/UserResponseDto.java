@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserDto extends DateAuditingDto {
+public class UserResponseDto extends DateAuditingDto {
 
   private String id;
 
