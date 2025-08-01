@@ -61,7 +61,7 @@ project
  - **aop** : Xử lý log, thống kê và cập nhật hoạt động người dùng bằng AOP.
  - **base**: Cung cấp các lớp nền để chuẩn hóa phản hồi API.
  - **config**: Chứa các cấu hình của ứng dụng (các bean, cài đặt bảo mật, cấu hình database).
- - *constant**: Khai báo các hằng số dùng toàn hệ thống.
+ - **constant**: Khai báo các hằng số dùng toàn hệ thống.
  - **controller**: Lớp xử lý yêu cầu HTTP.
  - **domain**: Chứa các entity ánh xạ với cơ sở dữ liệu.
  - **exception**: Định nghĩa và xử lý các ngoại lệ tùy chỉnh.
