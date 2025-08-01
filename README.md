@@ -2,92 +2,220 @@
 
 
 
-## Getting started
+# Backend
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+*(Toàn bộ mã nguồn backend sẽ nằm ở thư mục này)*
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+---
 
-## Add your files
+## Yêu Cầu Hệ Thống
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### Những yêu cầu về môi trường chạy dự án:
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/trunghoa2k4/hit-chill-and-chill.git
-git branch -M main
-git push -uf origin main
-```
+- **Java**: 17 trở lên  
+- **Maven**: 3.8.7 hoặc mới hơn  
+- **Database**: MySQL
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](https://gitlab.com/trunghoa2k4/hit-chill-and-chill/-/settings/integrations)
+## Cấu Trúc Thư Mục
 
-## Collaborate with your team
+###Cấu trúc dự án
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+<pre> ``` 
+project
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── com
+│   │   │       └── example
+│   │   │           └── projectbase
+│   │   │               ├── aop
+│   │   │               ├── base
+│   │   │               ├── config
+│   │   │               ├── constant
+│   │   │               ├── controller
+│   │   │               ├── domain
+│   │   │               ├── exception
+│   │   │               ├── job
+│   │   │               ├── repository
+│   │   │               ├── security
+│   │   │               ├── service
+│   │   │               ├── util
+│   │   │               └── validator
+│   ├── resources
+│   │   ├── i18n
+│   │   ├── static
+│   │   └── templates
+│   │       ├── application.properties
+│   │       ├── application-dev.properties
+│   │       └── application-prod.properties
+│   └── test
+├── pom.xml
+└── README.md
 
-## Test and Deploy
 
-Use the built-in continuous integration in GitLab.
+ ``` </pre>
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+ #### Giải thích từng thư mục 
+ - **aop** : Xử lý log, thống kê và cập nhật hoạt động người dùng bằng AOP.
+ - **base**: Cung cấp các lớp nền để chuẩn hóa phản hồi API.
+ - **config**: Chứa các cấu hình của ứng dụng (các bean, cài đặt bảo mật, cấu hình database).
+ - *constant**: Khai báo các hằng số dùng toàn hệ thống.
+ - **controller**: Lớp xử lý yêu cầu HTTP.
+ - **domain**: Chứa các entity ánh xạ với cơ sở dữ liệu.
+ - **exception**: Định nghĩa và xử lý các ngoại lệ tùy chỉnh.
+ - **repository**: Tầng giao tiếp với cơ sở dữ liệu.
+ - **security**: Cấu hình và xử lý xác thực, phân quyền (JWT, OAuth2,...).
+ - **service**: Xử lý logic của ứng dụng.
+ - **util**: Các tiện ích dùng chung.
+ - **validator**: Chứa các custom annotation và class để kiểm tra dữ liệu đầu vào.
+ - **i18n**: Chứa các file đa ngôn ngữ (thông báo lỗi, thành công...) phục vụ việc quốc tế hóa ứng dụng.
+ - **static**: Chứa các tài nguyên tĩnh.
+ - **application.properties**: File cấu hình gốc.
+ - **application-dev.properties**: File cấu hình dùng khi chạy môi trường phát triển.
+ - **application-prod.properties**: File cấu hình dùng khi chạy môi trường thật.
+ - **pom.xml**: File cấu hình Maven.
 
-***
+ ## Hệ thống
+ ### Thiết kế theo kiến trúc phân lớp như hình vẽ bên dưới:
+![ảnh minh hoạ](https://drive.google.com/file/d/1eYo8nHt4MjYhYCqe-aSZR1rWT_37w_jJ/view?usp=sharing)
 
-# Editing this README
+### Auth Controller
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+- Auth Controller: Xử lý đăng nhập, đăng ký, đăng xuất, xác thực người dùng.
+    - Sử dụng JWT để phân quyền. Dùng access token và refresh token.
+    - Sử dụng Redis để lưu session và theo dõi trạng thái người dùng.
+    - Sử dụng MySQL để lưu thông tin người dùng và phiên đăng nhập.
+    - Hỗ trợ đăng nhập bằng Google, Facebook (OAuth2).
 
-## Suggestions for a good README
+### Comment Controller
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+- Comment Controller: Quản lý chức năng bình luận cho người dùng.
+    - Sử dụng MySQL để lưu trữ bình luận.
+    - Sử dụng JPA để truy vấn, phân trang và quản lý mối quan hệ giữa bình luận và các thực thể liên quan (ví dụ: bài viết, hồ sơ,...).
+    - Hỗ trợ phân quyền bằng Spring Security (chỉ cho phép người dùng đã đăng nhập được bình luận hoặc xoá bình luận của mình).
+    - Sử dụng Spring Boot làm framework chính.
 
-## Name
-Choose a self-explaining name for your project.
+### Media Controller
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+- Media Controller: Quản lý upload, xoá và truy xuất file media (ảnh, video, audio).
+    - Sử dụng Cloudinary để lưu trữ media.
+    - Sử dụng MySQL để lưu metadata file.
+    - Tích hợp Cloudinary API để xoá file khỏi server.
+    - Sử dụng Spring Boot.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### OAuth Controller
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- OAuth Controller: Xử lý đăng nhập bằng Google/Facebook thông qua OAuth2.
+    - Trích xuất thông tin từ OAuth2User và tạo người dùng mới nếu chưa tồn tại.
+    - Sử dụng Spring Security OAuth2 để xử lý đăng nhập.
+    - Sử dụng MySQL để lưu thông tin người dùng.
+    - Tạo token và lưu vào cookie sau khi đăng nhập thành công.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Follow Controller
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+- Follow Controller: Quản lý theo dõi giữa người dùng với nhau.
+    - Sử dụng MySQL để lưu thông tin mối quan hệ follow.
+    - Sử dụng JPA để phân trang và truy vấn người theo dõi/người đang theo dõi.
+    - Xác thực người dùng qua Spring Security.
+    - Sử dụng Spring Boot.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### OtpForgotPassword Controller
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+- OtpForgotPassword Controller: Xử lý gửi mã OTP, xác minh OTP và đổi mật khẩu mới khi người dùng quên mật khẩu.
+    - Sử dụng MySQL để lưu thông tin OTP và người dùng.
+    - Sử dụng Spring Scheduler để xóa tự động OTP hết hạn.
+    - Sử dụng Spring Security để mã hóa mật khẩu mới.
+    - Sử dụng Thymeleaf để render email HTML gửi OTP.
+    - Sử dụng MailService để gửi email OTP.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Post Controller
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- Post Controller: Quản lý các chức năng liên quan đến bài viết như tạo, đọc, xóa và tìm kiếm.
+    - Sử dụng MySQL để lưu trữ thông tin bài viết.
+    - Sử dụng JPA để thao tác và phân trang dữ liệu.
+    - Sử dụng AWS S3 để lưu trữ file media (hình ảnh, audio, video).
+    - Sử dụng Kafka để gửi dữ liệu kiểm duyệt nội dung media.
+    - Hỗ trợ xử lý phân quyền với Spring Security.
+    - Sử dụng Redis để gợi ý bài viết thịnh hành theo người dùng.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### Reaction Controller
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- Reaction Controller: Quản lý hành động cảm xúc của người dùng đối với bài viết (thả like, love, haha...).
+    - Sử dụng MySQL để lưu trữ dữ liệu reaction.
+    - Sử dụng JPA để thao tác và phân trang dữ liệu reaction theo bài viết.
+    - Sử dụng Spring Security để xác thực người dùng khi tạo hoặc hủy cảm xúc.
 
-## License
-For open source projects, say how it is licensed.
+### Role Controller
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- Role Controller: Quản lý phân quyền người dùng thông qua các vai trò (role).
+    - Sử dụng Spring Security để kiểm soát quyền truy cập các API (chỉ Admin mới được tạo, cập nhật, xóa role).
+    - Sử dụng MySQL để lưu trữ thông tin role.
+    - Sử dụng JPA để truy vấn role và kiểm tra ràng buộc với người dùng.
+
+### Share Controller
+
+- Share Controller: Cho phép người dùng chia sẻ lại bài viết đã có.
+    - Sử dụng Spring Security để xác thực người dùng trước khi chia sẻ.
+    - Dữ liệu bài viết chia sẻ được lưu trữ trong MySQL, sử dụng JPA để thao tác.
+
+### User Controller
+
+- User Controller: Quản lý người dùng – tạo mới, cập nhật thông tin, xóa tài khoản, đổi mật khẩu, lấy người dùng hiện tại.
+    - Sử dụng Spring Security để phân quyền và kiểm tra quyền truy cập.
+    - Sử dụng Spring Data JPA để truy vấn dữ liệu và phân trang.
+    
+### UserSetting Controller
+
+- UserSetting Controller: Quản lý cài đặt cá nhân của người dùng như giao diện, ngôn ngữ.
+    - Sử dụng Spring Security để phân quyền và kiểm tra quyền truy cập.
+    - Dùng MySQL để lưu trữ cài đặt người dùng.
+    - Sử dụng Spring Data JPA để truy vấn và cập nhật dữ liệu.
+    - Kiểm tra xác thực người dùng bằng SecurityContextHolder.
+
+## Công nghệ sử dụng
+
+Dự án sử dụng các công nghệ sau:
+-Ngôn ngữ: Java 17
+-Framework: Spring Boot 3.x
+-ORM: Spring Data JPA + Hibernate
+-Bảo mật: Spring Security 6 kết hợp với JWT (JSON Web Token)
+-Cơ sở dữ liệu: MySQL 8
+-Build tool: Maven
+-Ghi log: SLF4J + Logback
+-Kiểm thử API: Postman, Swagger UI
+
+## Pre-requisites - Yêu cầu
+
+- Cần có các công cụ sau để cài đặt và chạy một local server:
+  - [Docker](https://www.docker.com/)
+  - [Docker Compose](https://docs.docker.com/compose/)
+
+## Hướng dẫn cài đặt
+
+- cd vào thư mục backend:
+<pre> ``` cd backend ``` </pre>
+-Sử dụng Docker để xây dựng image từ Dockerfile. Chạy lệnh sau trong thư mục chứa Dockerfile:
+<pre> ``` docker build -t project-base . ``` </pre>
+-Sau khi xây dựng image, bạn có thể chạy container bằng lệnh sau:
+<pre> ``` docker run -d -p 8080:8080 --name my-app project-base:1.0 ``` </pre>
+- `-d`: Chạy container ở chế độ nền (detached mode).
+- `-p 8080:8080`: Chuyển tiếp cổng 8000 từ máy host sang cổng 8080 của container.
+
+##PORT BINDING
+- Sau khi chạy xong, các service sẽ được chạy trên các port như sau:
+
+| Service     | PORT      |
+|-------------|-----------|
+| API Gateway | 8080:8080 |
+
+
+
+
+
+
+
+
+
+
