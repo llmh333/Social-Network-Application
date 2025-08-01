@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,6 +24,10 @@ public class RestData<T> {
   public RestData(T data) {
     this.status = RestStatus.SUCCESS;
     this.data = data;
+  }
+
+  public static RestData<?> successWithMessage(Object message) {
+    return new RestData<>(RestStatus.SUCCESS,message, null);
   }
 
   public static RestData<?> error(Object message) {

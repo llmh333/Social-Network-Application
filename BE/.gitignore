@@ -15,9 +15,13 @@ target/
 
 ### IntelliJ IDEA ###
 .idea
+.mvn
 *.iws
 *.iml
 *.ipr
+
+#Ignore spring boot config
+/src/main/resource/application-prod.properties
 
 ### NetBeans ###
 /nbproject/private/
