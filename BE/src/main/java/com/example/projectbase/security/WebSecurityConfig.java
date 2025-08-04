@@ -64,7 +64,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/v1/auth/refresh-token",
                         "/api/v1/auth/register",
                         "/api/v1/forgot-password/**",
-                        "/api/v1/oauth2/info/",
+                        "/api/v1/oauth2/info/token",
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                         "/oauth2/**",
                         "/login/oauth2/**",
@@ -85,7 +85,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         .userService(oAuthService)
                         .oidcUserService(customOidcUserService);
         http.exceptionHandling().authenticationEntryPoint(new JwtAuthenticationEntryPoint());
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter .class);
         http.sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }

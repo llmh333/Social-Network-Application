@@ -19,6 +19,7 @@ import com.example.projectbase.repository.FollowRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.FollowService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -42,6 +43,7 @@ public class FollowServiceImpl implements FollowService {
     private final UserRepository userRepository;
     private final FollowMapper followMapper;
     private final UserMapper userMapper;
+    private final MailServiceImpl mailService;
 
     @PreAuthorize("isAuthenticated()")
     @Override
@@ -60,7 +62,7 @@ public class FollowServiceImpl implements FollowService {
 
         boolean follow = followRepository.existsByFollowingAndFollower(following, follower);
         if (follow) {
-            throw new ConflictException(ErrorMessage.Follow.ERR_DUPLICATE);
+            throw new ConflictException(ErrorMessage.Follow.ERR_DUPLICATE, new String[]{followingId});
         }
 
         Follow newFollow = new Follow();
@@ -69,6 +71,9 @@ public class FollowServiceImpl implements FollowService {
         FollowResponseDto responseDto = followMapper.toFollowResponseDto(followRepository.save(newFollow));
         responseDto.setFollowerId(followerId);
         responseDto.setFollowingId(following.getId());
+
+        String content = "Người dùng "+userPrincipal.getFirstName()+" " + userPrincipal.getLastName() + " đã follow bạn";
+        mailService.sendEmailWithObject(following.getEmail(),content, "Thông báo từ Chill And Chill");
 
         return responseDto;
     }
