@@ -20,9 +20,9 @@
 
 ## Cấu Trúc Thư Mục
 
-###Cấu trúc dự án
+### Cấu trúc dự án
 
-<pre> ``` 
+<pre> 
 project
 ├── src
 │   ├── main
@@ -55,7 +55,7 @@ project
 └── README.md
 
 
- ``` </pre>
+  </pre>
 
  #### Giải thích từng thư mục 
  - **aop** : Xử lý log, thống kê và cập nhật hoạt động người dùng bằng AOP.
@@ -78,8 +78,21 @@ project
  - **pom.xml**: File cấu hình Maven.
 
  ## Hệ thống
- ### Thiết kế theo kiến trúc phân lớp như hình vẽ bên dưới:
-![ảnh minh hoạ](https://drive.google.com/file/d/1eYo8nHt4MjYhYCqe-aSZR1rWT_37w_jJ/view?usp=sharing)
+ ### Thiết kế theo kiến trúc phân lớp (Layered Architecture):
+ Hệ thống được thiết kế theo mô hình phân lớp (Layered Architecture) nhằm đảm bảo tính phân tách trách nhiệm rõ ràng, dễ mở rộng, và dễ bảo trì. Kiến trúc gồm 4 lớp chính như sau:
+- **Presentation Layer**  
+    - Chịu trách nhiệm giao tiếp với người dùng cuối.
+    - Nhiệm vụ: xử lý tương tác, nhận dữ liệu từ người dùng và gửi yêu cầu xuống các lớp phía dưới.
+- **Business Layer**
+    - Xử lý các logic nghiệp vụ cốt lõi của hệ thống.
+    - Đóng vai trò trung gian giữa lớp trình bày và lớp lưu trữ, thực hiện các tính toán, kiểm tra logic nghiệp vụ.
+- **Persistence Layer**
+    - Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+    - Đảm nhiệm việc tạo, đọc, cập nhật, xoá (CRUD) dữ liệu.
+
+- **Database Layer**
+    - Chứa dữ liệu vật lý, quản lý bởi hệ quản trị CSDL.
+    - Là nơi các DAO gửi truy vấn và nhận dữ liệu thực tế.
 
 ### Auth Controller
 
@@ -177,14 +190,14 @@ project
 ## Công nghệ sử dụng
 
 Dự án sử dụng các công nghệ sau:
--Ngôn ngữ: Java 17
--Framework: Spring Boot 3.x
--ORM: Spring Data JPA + Hibernate
--Bảo mật: Spring Security 6 kết hợp với JWT (JSON Web Token)
--Cơ sở dữ liệu: MySQL 8
--Build tool: Maven
--Ghi log: SLF4J + Logback
--Kiểm thử API: Postman, Swagger UI
+- Ngôn ngữ: Java 17
+- Framework: Spring Boot 3.x
+- ORM: Spring Data JPA + Hibernate
+- Bảo mật: Spring Security 6 kết hợp với JWT (JSON Web Token)
+- Cơ sở dữ liệu: MySQL 8
+- Build tool: Maven
+- Ghi log: SLF4J + Logback
+- Kiểm thử API: Postman, Swagger UI
 
 ## Pre-requisites - Yêu cầu
 
@@ -195,15 +208,15 @@ Dự án sử dụng các công nghệ sau:
 ## Hướng dẫn cài đặt
 
 - cd vào thư mục backend:
-<pre> ``` cd backend ``` </pre>
--Sử dụng Docker để xây dựng image từ Dockerfile. Chạy lệnh sau trong thư mục chứa Dockerfile:
-<pre> ``` docker build -t project-base . ``` </pre>
--Sau khi xây dựng image, bạn có thể chạy container bằng lệnh sau:
-<pre> ``` docker run -d -p 8080:8080 --name my-app project-base:1.0 ``` </pre>
+<pre>  cd backend  </pre>
+- Sử dụng Docker để xây dựng image từ Dockerfile. Chạy lệnh sau trong thư mục chứa Dockerfile:
+<pre>  docker build -t project-base .  </pre>
+- Sau khi xây dựng image, bạn có thể chạy container bằng lệnh sau:
+<pre>  docker run -d -p 8080:8080 --name my-app project-base:1.0  </pre>
 - `-d`: Chạy container ở chế độ nền (detached mode).
 - `-p 8080:8080`: Chuyển tiếp cổng 8000 từ máy host sang cổng 8080 của container.
 
-##PORT BINDING
+## PORT BINDING
 - Sau khi chạy xong, các service sẽ được chạy trên các port như sau:
 
 | Service     | PORT      |
