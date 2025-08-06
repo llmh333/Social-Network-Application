@@ -132,7 +132,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
         response.setContentType("application/json");
-        response.sendRedirect("/api/v1" + UrlConstant.OAUTH2_INFO.OAUTH2_TOKEN_INFO);
-
+        response.getWriter().write("{\"accessToken\": \""+accessToken+"\",\"refreshToken\": \""+refreshToken+"\"}");
     }
 }
