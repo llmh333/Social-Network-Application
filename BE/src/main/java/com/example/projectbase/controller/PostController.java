@@ -5,6 +5,7 @@ import com.example.projectbase.base.VsResponseUtil;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
+import com.example.projectbase.domain.dto.pagination.PaginationSortRequestDto;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
 import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
@@ -111,6 +112,12 @@ public class PostController {
     @GetMapping(path =  UrlConstant.Post.GET_TRENDING_POST)
     public ResponseEntity<?> getTrendingPost(@ModelAttribute @Valid PaginationFullRequestDto request) throws JsonProcessingException {
         PaginationResponseDto<PostResponseDto> response = postService.getPostsTrendingForUser(request);
+        return VsResponseUtil.success(HttpStatus.OK, response);
+    }
+
+    @GetMapping(path = UrlConstant.Post.GET_FAVORITES)
+    public ResponseEntity<?> getFavoritePosts(@ModelAttribute @Valid PaginationSortRequestDto request) {
+        PaginationResponseDto<PostResponseDto> response = postService.getFavoritePosts(request);
         return VsResponseUtil.success(HttpStatus.OK, response);
     }
 
