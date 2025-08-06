@@ -28,16 +28,16 @@ public class UrlConstant {
   }
 
   public static class User {
-    private static final String PRE_FIX = "/user";
+    private static final String PRE_FIX = "/users";
 
     public static final String GET_USERS = PRE_FIX;
     public static final String GET_USER = PRE_FIX + "/{userId}";
     public static final String GET_CURRENT_USER = PRE_FIX + "/current";
     public static final String CREATE_USER = PRE_FIX + "/create";
-    public static final String GET_ALL_USERS = PRE_FIX + "/all";
-    public static final String UPDATE_USERNAME = PRE_FIX + "/update/{id}";
+    public static final String UPDATE = PRE_FIX + "/update/{id}";
+    public static final String UPDATE_AVATAR = PRE_FIX + "/update-avatar";
     public static final String DELETE_USER= PRE_FIX + "/delete/{id}";
-    public static final String CHANGE_PASSWORD = PRE_FIX + "/changepassword";
+    public static final String CHANGE_PASSWORD = PRE_FIX + "/change-password";
     private User() {
     }
   }

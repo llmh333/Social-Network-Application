@@ -8,7 +8,8 @@ import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
-import com.example.projectbase.domain.dto.request.UserUpdateDto;
+import com.example.projectbase.domain.dto.request.UserUpdateRequestDto;
+import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.domain.entity.Role;
 import com.example.projectbase.domain.entity.User;
@@ -30,11 +31,16 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,18 +59,30 @@ public class UserServiceImpl implements UserService {
 
   private final PasswordEncoder passwordEncoder;
 
-  @PreAuthorize("isAuthenticated() or hasRole('ADMIN')")
+  private final ImageProcessingService imageProcessingService;
+
+  @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
   @Override
   public UserResponseDto getUserById(String userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
-    return userMapper.toUserDto(user);
+    long totalFollowers = user.getFollowers().size();
+    long totalFollowings = user.getFollowings().size();
+    UserResponseDto userResponseDto = userMapper.toUserDto(user);
+    userResponseDto.setTotalFollowers(totalFollowers);
+    userResponseDto.setTotalFollowings(totalFollowings);
+    return userResponseDto;
   }
 
   @PreAuthorize("isAuthenticated() or hasRole('ADMIN')")
   @Override
   public UserResponseDto getCurrentUser(UserPrincipal principal) {
     User user = userRepository.getUser(principal);
+    long totalFollowers = user.getFollowers().size();
+    long totalFollowings = user.getFollowings().size();
+    UserResponseDto userResponseDto = userMapper.toUserDto(user);
+    userResponseDto.setTotalFollowers(totalFollowers);
+    userResponseDto.setTotalFollowings(totalFollowings);
     return userMapper.toUserDto(user);
   }
 
@@ -113,15 +131,28 @@ public class UserServiceImpl implements UserService {
 
   }
 
-  @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
+  @PreAuthorize("#id == authentication.principal.id")
   @Override
-  public UserResponseDto updateUserName(String id, UserUpdateDto dto) {
+  public UserResponseDto updateUserInformation(String id, UserUpdateRequestDto request) {
     User user = userRepository.findById(id)
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
 
-    userMapper.updateUserFromDto(dto, user);
+    userMapper.updateUserFromDto(request, user);
 
     user = userRepository.save(user);
+    return userMapper.toUserDto(user);
+  }
+
+  @Override
+  public UserResponseDto updateUserAvatar(File avatarFile, String contentType) {
+    UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    User user = userRepository.findById(userPrincipal.getId()).orElseThrow(
+            () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userPrincipal.getId()})
+    );
+    CompletableFuture<MediaResponseDto> mediaResponseDto = imageProcessingService.uploadImage(avatarFile, contentType, user.getId());
+    MediaResponseDto completedMediaResponseDto = mediaResponseDto.join();
+    user.setImageUrl(completedMediaResponseDto.getSecureUrl());
+    userRepository.save(user);
     return userMapper.toUserDto(user);
   }
 
@@ -142,7 +173,7 @@ public class UserServiceImpl implements UserService {
     userRepository.delete(user);
   }
 
-  @PreAuthorize("#username == authentication.principal.username or hasRole('ADMIN')")
+  @PreAuthorize("#username == authentication.principal.username")
   @Override
   public void changePassword(String username, ChangePasswordRequestDto request) {
       User user = userRepository.findByUsername(username)
@@ -155,6 +186,5 @@ public class UserServiceImpl implements UserService {
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);
   }
-
 
 }
