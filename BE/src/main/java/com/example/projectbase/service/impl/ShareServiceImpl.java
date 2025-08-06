@@ -27,7 +27,7 @@ public class ShareServiceImpl implements ShareService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final MediaRepository mediaRepository;
+    private final MailServiceImpl mailService;
     private final MediaMapper mediaMapper;
 
     @PreAuthorize("isAuthenticated()")
@@ -64,6 +64,12 @@ public class ShareServiceImpl implements ShareService {
         responseDto.setTitle(newPost.getTitle());
         responseDto.setContent(newPost.getContent());
         responseDto.setOriginalPost(postSummaryDto);
+
+        User userOfPost= userRepository.findByUsername(originalPost.getCreatedBy())
+                .orElseThrow(() -> new  NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(originalPost.getCreatedBy())}));
+        String content = "Người dùng "+currentUser.getFirstName()+" " + currentUser.getLastName() + " đã chia sẻ một bài viết của bạn";
+        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
+
         return responseDto;
     }
 

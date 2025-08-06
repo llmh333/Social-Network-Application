@@ -38,7 +38,7 @@ public class MailServiceImpl implements MailService {
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
-        log.info("Send otp code to email successfully");
+        log.info("Send content to email successfully");
         return true;
     }
 }
