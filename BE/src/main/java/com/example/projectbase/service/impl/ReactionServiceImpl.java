@@ -40,6 +40,7 @@ public class ReactionServiceImpl implements ReactionService {
     private final PostRepository postRepository;
     private final ReactionMapper reactionMapper;
     private final UserRepository userRepository;
+    private final MailServiceImpl mailService;
 
     @PreAuthorize("isAuthenticated()")
     @Override
@@ -69,6 +70,10 @@ public class ReactionServiceImpl implements ReactionService {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)})
         );
+
+        User userOfPost= userRepository.findById(post.getCreatedBy())
+                .orElseThrow(() -> new  NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
+
         reaction.setPost(post);
         reaction.setUser(user);
         ReactionResponseDto responseDto = reactionMapper.toReactionResponseDto(reactionRepository.save(reaction));
@@ -79,6 +84,10 @@ public class ReactionServiceImpl implements ReactionService {
         }
         responseDto.setPostId(post.getId());
         responseDto.setUserId(user.getId());
+
+
+        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã thả cảm xúc vào một bài viết của bạn";
+        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
         return responseDto;
     }
 

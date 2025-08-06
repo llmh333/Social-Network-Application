@@ -36,7 +36,7 @@ public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
-    private final UserMapper userMapper;
+    private final MailServiceImpl mailService;
 
     @PreAuthorize("#username == authentication.principal.username")
     @Override
@@ -50,12 +50,15 @@ public class CommentServiceImpl implements CommentService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(username)}));
 
+        User userOfPost= userRepository.findByUsername(post.getCreatedBy())
+                .orElseThrow(() -> new  NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
         Comment comment = createComment(requestDto.getContent(), post, user, null);
 
         Comment savedComment = commentRepository.save(comment);
 
         log.info("Comment created with id: {}", savedComment.getId());
-
+        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã bình luận vào một bài viết của bạn";
+        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
         CommentResponseDto commentResponseDto = commentMapper.toCommentResponseDto(savedComment);
         return commentResponseDto;
     }
@@ -69,6 +72,10 @@ public class CommentServiceImpl implements CommentService {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
+
+        User userOfPost= userRepository.findByUsername(post.getCreatedBy())
+                .orElseThrow(() -> new  NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
         Comment parent = commentRepository.findById(parentCommentId)
@@ -82,7 +89,8 @@ public class CommentServiceImpl implements CommentService {
         Comment savedReply = commentRepository.save(reply);
 
         log.info("Reply created with id: {}", savedReply.getId());
-
+        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã trả lời một bình luận vào bài viết của bạn";
+        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
         return commentMapper.toCommentResponseDto(savedReply);
     }
 
