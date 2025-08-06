@@ -6,6 +6,7 @@ import com.example.projectbase.constant.PostStatusConstant;
 import com.example.projectbase.constant.SortByDataConstant;
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
+import com.example.projectbase.domain.dto.pagination.PaginationSortRequestDto;
 import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
 import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
@@ -128,6 +129,36 @@ public class PostServiceImpl implements PostService {
         Page<Post> postPage = (keyword != null && !keyword.isBlank())
                 ? postRepository.searchByTitleKeyword(keyword, pageable)
                 : postRepository.findAll(pageable);
+        List<PostResponseDto> dtoList = postPage.stream()
+                .map(postMapper::toPostResponseDto)
+                .collect(Collectors.toList());
+
+        PagingMeta meta = PagingMeta.builder()
+                .pageNum(pageNum + 1)
+                .pageSize(pageSize)
+                .totalPages(postPage.getTotalPages())
+                .sortBy(request.getSortBy())
+                .sortType(request.getIsAscending() ? CommonConstant.SORT_TYPE_ASC : CommonConstant.SORT_TYPE_DESC)
+                .totalElements(postPage.getTotalElements())
+                .build();
+
+        return new PaginationResponseDto<>(meta, dtoList);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @Override
+    public PaginationResponseDto<PostResponseDto> getFavoritePosts(PaginationSortRequestDto request) {
+        int pageNum = request.getPageNum();
+        int pageSize = request.getPageSize();
+
+        Sort sort = Sort.by(request.getSortBy(SortByDataConstant.POST));
+        sort = Boolean.FALSE.equals(request.getIsAscending()) ? sort.descending() : sort.ascending();
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize, sort);
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Page<Post> postPage = postRepository.findFavoritePostsByUserId(userPrincipal.getId(), pageable);
         List<PostResponseDto> dtoList = postPage.stream()
                 .map(postMapper::toPostResponseDto)
                 .collect(Collectors.toList());
