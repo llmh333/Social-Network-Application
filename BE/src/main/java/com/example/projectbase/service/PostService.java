@@ -2,6 +2,7 @@ package com.example.projectbase.service;
 
 import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
+import com.example.projectbase.domain.dto.pagination.PaginationSortRequestDto;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
 import com.example.projectbase.domain.dto.response.MediaResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
@@ -22,6 +23,8 @@ public interface PostService {
     void deletePost(Long postId);
 
     PaginationResponseDto<PostResponseDto> getAllPostsByTitleKeyword(PaginationFullRequestDto request);
+
+    PaginationResponseDto<PostResponseDto> getFavoritePosts(PaginationSortRequestDto request);
 
     PostResponseDto getPostById(Long postId);
 

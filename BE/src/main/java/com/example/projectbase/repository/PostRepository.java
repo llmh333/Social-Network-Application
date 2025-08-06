@@ -16,5 +16,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p WHERE (LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR (LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%') ) )")
     Page<Post> searchByTitleKeyword(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("SELECT r.post FROM Reaction r WHERE r.user.id = :userId")
+    Page<Post> findFavoritePostsByUserId(@Param("userId") String userId, Pageable pageable);
+
+
     Page<Post> findByCategoryNameIn(List<String> categoryName, Pageable pageable);
 }
