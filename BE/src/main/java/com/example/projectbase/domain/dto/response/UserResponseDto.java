@@ -1,16 +1,18 @@
 package com.example.projectbase.domain.dto.response;
 
+import com.example.projectbase.constant.GenderConstant;
 import com.example.projectbase.domain.dto.common.DateAuditingDto;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserResponseDto extends DateAuditingDto {
+@ToString
+public class UserResponseDto {
 
   private String id;
 
@@ -20,7 +22,21 @@ public class UserResponseDto extends DateAuditingDto {
 
   private String lastName;
 
-  private String roleName;
+  private String email;
+
+  private String imageUrl;
+
+  private LocalDate dob;
+
+  private GenderConstant gender;
+
+  private long totalFollowers;
+
+  private long totalFollowings;
+
+  private LocalDateTime createdAt;
+
+  private LocalDateTime lastModifiedAt;
 
 }
 
