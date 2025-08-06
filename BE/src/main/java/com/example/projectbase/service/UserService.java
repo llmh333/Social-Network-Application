@@ -4,9 +4,12 @@ import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.request.ChangePasswordRequestDto;
 import com.example.projectbase.domain.dto.request.UserCreateDto;
-import com.example.projectbase.domain.dto.request.UserUpdateDto;
+import com.example.projectbase.domain.dto.request.UserUpdateRequestDto;
 import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.security.UserPrincipal;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
 
 public interface UserService {
 
@@ -18,7 +21,9 @@ public interface UserService {
 
   PaginationResponseDto<UserResponseDto> getAllUsers(PaginationFullRequestDto request);
 
-  UserResponseDto updateUserName(String id, UserUpdateDto dto);
+  UserResponseDto updateUserInformation(String id, UserUpdateRequestDto request);
+
+  UserResponseDto updateUserAvatar(File avatarFile, String contentType);
 
   void deleteUser(String id);
   
