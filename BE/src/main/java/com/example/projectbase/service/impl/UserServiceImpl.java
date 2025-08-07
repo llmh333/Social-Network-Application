@@ -26,6 +26,8 @@ import com.example.projectbase.service.UserService;
 import com.example.projectbase.util.PaginationUtil;
 import com.example.projectbase.util.TokenBlacklistUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -45,6 +47,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
@@ -61,17 +64,13 @@ public class UserServiceImpl implements UserService {
 
   private final ImageProcessingService imageProcessingService;
 
-  @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
   @Override
   public UserResponseDto getUserById(String userId) {
+    log.info("Get user by id: {}", userId);
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
-    long totalFollowers = user.getFollowers().size();
-    long totalFollowings = user.getFollowings().size();
-    UserResponseDto userResponseDto = userMapper.toUserDto(user);
-    userResponseDto.setTotalFollowers(totalFollowers);
-    userResponseDto.setTotalFollowings(totalFollowings);
-    return userResponseDto;
+    log.info("Get user successfully");
+    return userMapper.toUserDto(user);
   }
 
   @PreAuthorize("isAuthenticated() or hasRole('ADMIN')")
