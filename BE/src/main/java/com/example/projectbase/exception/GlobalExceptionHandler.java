@@ -10,6 +10,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -64,13 +66,12 @@ public class GlobalExceptionHandler {
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
   }
 
-  @ExceptionHandler(Exception.class)
-  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-  public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex) {
-    log.error(ex.getMessage(), ex);
-    String message = messageSource.getMessage(ErrorMessage.ERR_EXCEPTION_GENERAL, null,
-        LocaleContextHolder.getLocale());
-    return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, message);
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<RestData<?>> handleAccessDeniedException(AccessDeniedException ex) {
+
+    log.warn("Access Denied Exception caught by GlobalExceptionHandler: {}", ex.getMessage());
+    String message = messageSource.getMessage(ErrorMessage.FORBIDDEN, null, LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.FORBIDDEN, message);
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -128,6 +129,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(ConflictException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
   public ResponseEntity<RestData<?>> handleConflictException(ConflictException ex) {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams() ,LocaleContextHolder.getLocale());
     log.warn(message);
@@ -146,5 +148,17 @@ public class GlobalExceptionHandler {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
     log.warn(message);
     return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(Exception.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex, HttpServletResponse response) {
+    if (response.isCommitted()) {
+      return null;
+    }
+    log.error(ex.getMessage(), ex);
+    String message = messageSource.getMessage(ErrorMessage.ERR_EXCEPTION_GENERAL, null,
+            LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, message);
   }
 }
