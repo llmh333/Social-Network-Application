@@ -53,7 +53,7 @@ public class MediaProcessingListener {
             postRepository.save(post);
 
             List<File> filesToProcess = awsS3Service.downloadMultipleFiles(s3Urls);
-
+            awsS3Service.deleteMultipleFiles(s3Urls);
             processAndSaveMedia(post, filesToProcess, contentTypeList, singerName, post.getCreatedBy());
 
         } catch (Exception e) {
