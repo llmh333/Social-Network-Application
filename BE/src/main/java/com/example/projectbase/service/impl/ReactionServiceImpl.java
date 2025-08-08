@@ -97,7 +97,7 @@ public class ReactionServiceImpl implements ReactionService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
-        long response = reactionRepository.deleteByUserIdAndPostId(userPrincipal.getId(), postId);
+        int response = reactionRepository.deleteByUserIdAndPostId(userPrincipal.getId(), post.getId());
 
         if (response == 0) {
             throw new NotFoundException(ErrorMessage.Reaction.ERR_NOT_FOUND);

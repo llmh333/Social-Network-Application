@@ -107,7 +107,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    @PreAuthorize("isAuthenticated() and @postServiceImpl.isOwner(#postId, authentication.username)")
+    @PreAuthorize("isAuthenticated() and @postServiceImpl.isOwner(#postId, authentication.name)")
     @Transactional
     @Override
     public void deletePost(Long postId) {
