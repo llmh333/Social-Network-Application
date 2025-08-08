@@ -24,7 +24,7 @@ public class RegisterRequestDto {
     private String email;
 
     @NotBlank(message = ErrorMessage.NOT_BLANK_FIELD)
-    @Pattern(regexp = "^(?=.*[!@#$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#$%^&*(),.?\":{}|<>]{6,}$", message = ErrorMessage.INVALID_PASSWORD)
+    @Pattern(regexp = "^(?=.*[!@#$%^&*()_,.?\":{}|<>])[A-Za-z\\d!@#$%^&*()_,.?\":{}|<>]{6,}$", message = ErrorMessage.INVALID_PASSWORD)
     private String password;
 
     @NotBlank String firstName;
