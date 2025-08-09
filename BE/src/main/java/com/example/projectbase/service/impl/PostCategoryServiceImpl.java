@@ -70,7 +70,7 @@ public class PostCategoryServiceImpl implements PostCategoryService {
                 redisService.save("username:"+userPrincipal.getUsername()+":trending", json);
             } else {
                 Map<String, Object> categoryPostList = objectMapper.readValue(trendingOfUser, new TypeReference<>() {});
-                int interactCategoryCount = (int) categoryPostList.get(postCategory.getName());
+                int interactCategoryCount = (int) categoryPostList.getOrDefault(postCategory.getName(), 0);
                 categoryPostList.put(post.getCategory().getName(), interactCategoryCount + 1);
                 String updatedJson = objectMapper.writeValueAsString(categoryPostList);
                 redisService.save("username:"+userPrincipal.getUsername()+":trending", updatedJson);
