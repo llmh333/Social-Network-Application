@@ -2,6 +2,7 @@ package com.example.projectbase.service.impl;
 
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.RoleConstant;
+import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.request.CommentRequestDto;
 import com.example.projectbase.domain.dto.request.ReplyCommentRequestDto;
 import com.example.projectbase.domain.dto.response.CommentResponseDto;
@@ -50,15 +51,15 @@ public class CommentServiceImpl implements CommentService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(username)}));
 
-        User userOfPost= userRepository.findByUsername(post.getCreatedBy())
+        User userOfPost= userRepository.findById(post.getCreatedBy())
                 .orElseThrow(() -> new  NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
         Comment comment = createComment(requestDto.getContent(), post, user, null);
 
         Comment savedComment = commentRepository.save(comment);
 
         log.info("Comment created with id: {}", savedComment.getId());
-        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã bình luận vào một bài viết của bạn";
-        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
+//        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã bình luận vào một bài viết của bạn";
+//        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
         CommentResponseDto commentResponseDto = commentMapper.toCommentResponseDto(savedComment);
         return commentResponseDto;
     }
