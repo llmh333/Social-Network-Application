@@ -11,10 +11,7 @@ import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
 import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
-import com.example.projectbase.domain.entity.PostCategory;
-import com.example.projectbase.domain.entity.Post;
-import com.example.projectbase.domain.entity.Reaction;
-import com.example.projectbase.domain.entity.User;
+import com.example.projectbase.domain.entity.*;
 import com.example.projectbase.domain.mapper.PostMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
@@ -183,13 +180,14 @@ public class PostServiceImpl implements PostService {
         Post post = findPostOrThrow(postId);
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Reaction reaction = reactionRepository.findByUser_IdAndPost_Id(userPrincipal.getId(), postId);
-        boolean isReactedByCurrentUser;
-        isReactedByCurrentUser = false;
+        boolean reactedByCurrentUser;
+        reactedByCurrentUser = false;
         if (reaction != null) {
-            isReactedByCurrentUser = true;
+            reactedByCurrentUser = true;
         }
+        List<Media> mediaList = post.getMediaList();
         PostResponseDto postResponseDto = postMapper.toPostResponseDto(post);
-        postResponseDto.setReactedByCurrentUser(isReactedByCurrentUser);
+        postResponseDto.setReactedByCurrentUser(reactedByCurrentUser);
         if (post.getOriginalPost() != null) {
             postResponseDto.setOriginalPostId(post.getOriginalPost().getId());
         }

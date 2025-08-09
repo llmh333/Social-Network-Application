@@ -22,9 +22,6 @@ public class MediaResponseDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String thumbnailUrl;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String postId;
-
     private String resourceType;
     private Long dataSize;
     private String format;
