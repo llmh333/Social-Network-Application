@@ -4,6 +4,7 @@ import com.example.projectbase.service.PostCategoryService;
 import com.example.projectbase.service.UserSessionService;
 import com.example.projectbase.service.impl.PostCategoryServiceImpl;
 import com.example.projectbase.service.impl.UserSessionServiceImpl;
+import com.example.projectbase.util.TokenBlacklistUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -12,11 +13,15 @@ import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -54,9 +59,12 @@ public class RepositoryAspect {
     try {
       log.info("Updating last activity for user");
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      if (authentication != null && authentication.isAuthenticated()) {
+      if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
         String userId = authentication.getName();
-        userSessionService.updateLastActivity(userId);
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        String ipAddress = TokenBlacklistUtil.getClientIP(request);
+        log.info("Updating last activity for user '{}' from IP '{}'", userId, ipAddress);
+        userSessionService.updateLastActivity(ipAddress, userId);
       }
     } catch (Exception e) {
       log.error("Failed to update last activity", e);
