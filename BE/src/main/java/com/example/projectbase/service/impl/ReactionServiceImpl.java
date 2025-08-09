@@ -86,8 +86,8 @@ public class ReactionServiceImpl implements ReactionService {
         responseDto.setUserId(user.getId());
 
 
-        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã thả cảm xúc vào một bài viết của bạn";
-        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
+//        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã thả cảm xúc vào một bài viết của bạn";
+//        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
         return responseDto;
     }
 
