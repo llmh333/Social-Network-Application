@@ -86,8 +86,8 @@ public class ReactionServiceImpl implements ReactionService {
         responseDto.setUserId(user.getId());
 
 
-        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã thả cảm xúc vào một bài viết của bạn";
-        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
+//        String content = "Người dùng "+user.getFirstName()+" " + user.getLastName() + " đã thả cảm xúc vào một bài viết của bạn";
+//        mailService.sendEmailWithObject(userOfPost.getEmail(),content,"Thông báo từ Chill And Chill");
         return responseDto;
     }
 
@@ -97,7 +97,7 @@ public class ReactionServiceImpl implements ReactionService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
-        long response = reactionRepository.deleteByUserIdAndPostId(userPrincipal.getId(), postId);
+        int response = reactionRepository.deleteByUserIdAndPostId(userPrincipal.getId(), post.getId());
 
         if (response == 0) {
             throw new NotFoundException(ErrorMessage.Reaction.ERR_NOT_FOUND);

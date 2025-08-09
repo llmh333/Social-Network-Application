@@ -47,9 +47,6 @@ public class ReactionController {
     @DeleteMapping(value = UrlConstant.Post.CANCEL_REACTION_OF_POST)
     public ResponseEntity<RestData<?>> deleteReaction(@PathVariable Long postId) {
         boolean responseDto = reactionService.cancelReaction(postId);
-        if (!responseDto) {
-            return VsResponseUtil.success(HttpStatus.BAD_REQUEST);
-        }
         return VsResponseUtil.success(HttpStatus.NO_CONTENT);
     }
 
