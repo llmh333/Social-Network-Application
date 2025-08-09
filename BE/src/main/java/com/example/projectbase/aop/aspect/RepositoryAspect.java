@@ -77,20 +77,15 @@ public class RepositoryAspect {
 
   private Long extractPostIdFromJoinPoint(JoinPoint joinPoint) {
     MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-    Method method = signature.getMethod();
+    String[] parameterNames = signature.getParameterNames(); // Lấy danh sách tên của tất cả các tham số
     Object[] args = joinPoint.getArgs();
-    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
 
-    for (int i = 0; i < parameterAnnotations.length; i++) {
-      for (Annotation annotation : parameterAnnotations[i]) {
-
-        if (annotation instanceof PathVariable) {
-          PathVariable pathVariable = (PathVariable) annotation;
-          if ("postId".equals(pathVariable.value()) || "postId".equals(pathVariable.name())) {
-            if (args[i] instanceof Long) {
-              return (Long) args[i];
-            }
-          }
+    for (int i = 0; i < parameterNames.length; i++) {
+      // Kiểm tra xem tên tham số có phải là "postId" không
+      if ("postId".equals(parameterNames[i])) {
+        // Nếu đúng, kiểm tra xem giá trị của nó có phải là Long không
+        if (args[i] instanceof Long) {
+          return (Long) args[i]; // Tìm thấy, trả về giá trị
         }
       }
     }
