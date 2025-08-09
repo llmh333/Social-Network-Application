@@ -53,6 +53,8 @@ public class User extends DateAuditing {
   @Column(nullable = false)
   private LocalDate dob;
 
+  private String bio;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "auth_provider", nullable = true)
   private AuthProvider provider;          // local, google, facebook

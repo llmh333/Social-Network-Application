@@ -31,7 +31,7 @@ public interface UserMapper {
     userResponseDto.setLastModifiedAt(user.getLastModifiedAt());
     userResponseDto.setTotalFollowers(totalFollowers);
     userResponseDto.setTotalFollowings(totalFollowings);
-
+    userResponseDto.setBio(user.getBio());
     return userResponseDto;
   }
 
