@@ -4,5 +4,5 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface UserSessionService {
 
-    public void updateLastActivity(String username) throws JsonProcessingException;
+    public void updateLastActivity(String ipAddress, String username) throws JsonProcessingException;
 }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Log4j2
@@ -26,25 +27,29 @@ public class UserSessionServiceImpl implements UserSessionService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void updateLastActivity(String username) throws JsonProcessingException {
+    public void updateLastActivity(String ipAddress, String username) throws JsonProcessingException {
         String userSessionRedis = redisService.get("username:" + username + ":session");
         if (userSessionRedis != null) {
-            UserSession userSession = userSessionRepository.findByUsername(username);
-            if (userSession == null) {
+            UserSession userSession  = userSessionRepository.findByIpAddressAndUsername(ipAddress, username);
+            if (userSession != null) {
+                userSession.setIsActive(true);
+                userSessionRepository.save(userSession);
+
+                Map<String, Object> sessionMap = objectMapper.readValue(userSessionRedis, new TypeReference<>() {});
+
+                sessionMap.put("last_activity", LocalDateTime.now().toString());
+                sessionMap.put("status", UserStatus.ONLINE.name());
+                String updatedJson = objectMapper.writeValueAsString(sessionMap);
+
+                redisService.save("username:" + username + ":session", updatedJson);
+
+                log.info("Updated last activity for user '{}' from IP '{}'", username, ipAddress);
+            }
+            else {
+                log.warn("No active session found for user '{}' from IP '{}'. Skipping activity update.", username, ipAddress);
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
             }
-            userSession.setIsActive(true);
-            userSessionRepository.save(userSession);
 
-            Map<String, Object> sessionMap = objectMapper.readValue(userSessionRedis, new TypeReference<>() {});
-
-            sessionMap.put("last_activity", LocalDateTime.now().toString());
-            sessionMap.put("status", UserStatus.ONLINE.name());
-            String updatedJson = objectMapper.writeValueAsString(sessionMap);
-
-            redisService.save("username:" + username + ":session", updatedJson);
-
-            log.info("Updated last activity: {}", updatedJson);
         }
     }
 }
