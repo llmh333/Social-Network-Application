@@ -94,6 +94,7 @@ public class ReactionServiceImpl implements ReactionService {
     @PreAuthorize("isAuthenticated()")
     @Override
     public boolean cancelReaction(Long postId) {
+        log.info("start cancelReaction");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(postId)}));
@@ -104,6 +105,7 @@ public class ReactionServiceImpl implements ReactionService {
         }
         post.setReactionCount(post.getReactionCount() - 1);
         postRepository.save(post);
+        log.info("Cancel Reaction of Post with id: " + post.getId() + "successfully [userId: {}]", userPrincipal.getId());
         return true;
     }
 
