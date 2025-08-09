@@ -28,6 +28,8 @@ public class UserResponseDto {
 
   private LocalDate dob;
 
+  private String bio;
+
   private GenderConstant gender;
 
   private long totalFollowers;

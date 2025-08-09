@@ -22,4 +22,6 @@ public class UserUpdateRequestDto {
 
   private GenderConstant gender;
 
+  private String bio;
+
 }
