@@ -13,12 +13,14 @@ import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
 import com.example.projectbase.domain.dto.response.PostResponseDto;
 import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.entity.Post;
+import com.example.projectbase.domain.entity.Reaction;
 import com.example.projectbase.domain.entity.User;
 import com.example.projectbase.domain.mapper.PostMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.PostCategoryRepository;
 import com.example.projectbase.repository.PostRepository;
+import com.example.projectbase.repository.ReactionRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.PostService;
@@ -53,6 +55,7 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final AwsS3ServiceImpl awsS3Service;
+    private final ReactionRepository reactionRepository;
     private final PostCategoryRepository postCategoryRepository;
     private final RedisServiceImpl redisService;
     private final PostCategoryServiceImpl postCategoryService;
@@ -178,7 +181,15 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostResponseDto getPostById(Long postId) {
         Post post = findPostOrThrow(postId);
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Reaction reaction = reactionRepository.findByUser_IdAndPost_Id(userPrincipal.getId(), postId);
+        boolean isReactedByCurrentUser;
+        isReactedByCurrentUser = false;
+        if (reaction != null) {
+            isReactedByCurrentUser = true;
+        }
         PostResponseDto postResponseDto = postMapper.toPostResponseDto(post);
+        postResponseDto.setReactedByCurrentUser(isReactedByCurrentUser);
         if (post.getOriginalPost() != null) {
             postResponseDto.setOriginalPostId(post.getOriginalPost().getId());
         }

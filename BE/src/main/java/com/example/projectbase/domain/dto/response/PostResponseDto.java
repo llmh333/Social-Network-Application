@@ -30,6 +30,8 @@ public class PostResponseDto {
     private Long originalPostId;
     
     private LocalDateTime createdAt;
+
+    private boolean reactedByCurrentUser;
 }
 
 
