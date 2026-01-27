@@ -8,7 +8,7 @@ import com.example.projectbase.domain.dto.pagination.PaginationFullRequestDto;
 import com.example.projectbase.domain.dto.pagination.PaginationResponseDto;
 import com.example.projectbase.domain.dto.pagination.PagingMeta;
 import com.example.projectbase.domain.dto.request.PostRequestDto;
-import com.example.projectbase.domain.dto.response.AwsS3ResponseDto;
+
 import com.example.projectbase.domain.dto.response.PostResponseDto;
 import com.example.projectbase.domain.entity.PostCategory;
 import com.example.projectbase.domain.entity.Post;
@@ -26,12 +26,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.kafka.core.KafkaTemplate;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -46,28 +46,28 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-//@Transactional
+// @Transactional
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
-    private final AwsS3ServiceImpl awsS3Service;
+
     private final PostCategoryRepository postCategoryRepository;
     private final RedisServiceImpl redisService;
     private final PostCategoryServiceImpl postCategoryService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final PostMapper postMapper;
-    private final KafkaTemplate<String, String> kafkaTemplate;
 
-    @Value("${app.kafka.request-topic}")
-    private String requestTopic;
+    private final PostMediaService postMediaService;
 
     @PreAuthorize("isAuthenticated()")
     @Override
-    public PostResponseDto createPost(PostRequestDto requestDto, List<File> files, List<MultipartFile> multipartFiles, List<String> contentTypeFileList) throws JsonProcessingException, ExecutionException, InterruptedException, TimeoutException {
+    public PostResponseDto createPost(PostRequestDto requestDto, List<File> files, List<MultipartFile> multipartFiles,
+            List<String> contentTypeFileList)
+            throws JsonProcessingException, ExecutionException, InterruptedException, TimeoutException {
 
-        if (!files.get(0).isFile()) {
+        if (files.isEmpty() || !files.get(0).isFile()) {
             throw new BadRequestException(ErrorMessage.Post.ERR_FILES_NULL);
         }
 
@@ -79,8 +79,10 @@ public class PostServiceImpl implements PostService {
             }
         }
 
-        AwsS3ResponseDto awsS3ResponseDto = awsS3Service.uploadMultiFile(files);
-        awsS3ResponseDto.setType(requestDto.getMediaType().toString().toLowerCase());
+        // Collect file paths to pass to async processing
+        List<String> filePaths = files.stream()
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toList());
 
         PostCategory postCategory = postCategoryService.createPostCategory(requestDto.getCategory());
 
@@ -88,19 +90,11 @@ public class PostServiceImpl implements PostService {
         post.setStatus(PostStatusConstant.PENDING_MODERATION);
         Post savedPost = postRepository.save(post);
 
-
         log.info("Đã tạo Post với trạng thái PENDING_MODERATION, postId: {}", savedPost.getId());
 
-        Map<String, Object> moderationRequest = new HashMap<>();
-        moderationRequest.put("postId", savedPost.getId().toString());
-        moderationRequest.put("type", requestDto.getMediaType().toString().toUpperCase());
-        moderationRequest.put("s3Urls", awsS3ResponseDto.getUrls());
-        moderationRequest.put("contentType", contentTypeFileList);
-        moderationRequest.put("singer_name", requestDto.getSingerName());
-
-        String payload = objectMapper.writeValueAsString(moderationRequest);
-        kafkaTemplate.send(requestTopic, payload);
-        log.info("Đã gửi yêu cầu kiểm duyệt cho postId: {}", savedPost.getId());
+        postMediaService.processPostMedia(savedPost.getId(), filePaths, contentTypeFileList,
+                requestDto.getSingerName());
+        log.info("Đã gửi yêu cầu xử lý media async cho postId: {}", savedPost.getId());
 
         return postMapper.toPostResponseDto(savedPost);
 
@@ -177,7 +171,7 @@ public class PostServiceImpl implements PostService {
                 .totalElements(postPage.getTotalElements())
                 .build();
 
-        return new  PaginationResponseDto(meta, dtoList);
+        return new PaginationResponseDto(meta, dtoList);
     }
 
     private Post buildPostFromDto(PostRequestDto requestDto, PostCategory postCategory) {
@@ -193,34 +187,36 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-
     private Post findPostOrThrow(Long id) {
         return postRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID, new String[]{String.valueOf(id)}));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Post.ERR_NOT_FOUND_ID,
+                        new String[] { String.valueOf(id) }));
     }
 
     public boolean isOwner(Long postId, String username) {
         Post post = findPostOrThrow(postId);
         User user = userRepository.findById(post.getCreatedBy())
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{String.valueOf(post.getCreatedBy())}));
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID,
+                        new String[] { String.valueOf(post.getCreatedBy()) }));
         return user.getUsername().equals(username);
     }
 
     private List<String> getTrendingCategories() {
         try {
-            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String trendingCategory = redisService.get("username:"+userPrincipal.getUsername()+":trending");
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication()
+                    .getPrincipal();
+            String trendingCategory = redisService.get("username:" + userPrincipal.getUsername() + ":trending");
             if (trendingCategory != null) {
-                Map<String, Object> dataTrending = objectMapper.readValue(trendingCategory, new TypeReference<>() {});
+                Map<String, Object> dataTrending = objectMapper.readValue(trendingCategory, new TypeReference<>() {
+                });
                 Map<String, Object> sortedTrending = dataTrending.entrySet()
                         .stream()
-                        .sorted(Comparator.comparing(e -> (Integer)e.getValue(), Comparator.reverseOrder()))
+                        .sorted(Comparator.comparing(e -> (Integer) e.getValue(), Comparator.reverseOrder()))
                         .collect(Collectors.toMap(
                                 Map.Entry::getKey,
                                 Map.Entry::getValue,
                                 (e1, e2) -> e1,
-                                LinkedHashMap::new
-                        ));
+                                LinkedHashMap::new));
 
                 List<String> categoryNames = sortedTrending.entrySet()
                         .stream()

@@ -40,7 +40,8 @@ public class VideoProcessingService {
     public CompletableFuture<MediaResponseDto> uploadVideo(File videoFile, String contentTypeFile, String userId) {
         try {
             MediaProcessingUtil.validateFile(videoFile, contentTypeFile);
-            Media mediaPending = MediaProcessingUtil.createMediaPending(videoFile, "video", userId, null, mediaRepository, userRepository);
+            Media mediaPending = MediaProcessingUtil.createMediaPending(videoFile, "video", userId, null,
+                    mediaRepository, userRepository);
 
             return compressVideo(videoFile, mediaPending)
                     .thenApply(compressFile -> {
@@ -50,8 +51,8 @@ public class VideoProcessingService {
                     })
                     .exceptionally(ex -> {
                         log.info("Have some error when uploading: {}", ex.getCause());
-                       updateMediaStatusAsync(mediaPending, UploadStatusConstant.ERROR);
-                       throw new CompletionException(ex);
+                        updateMediaStatusAsync(mediaPending, UploadStatusConstant.ERROR);
+                        throw new CompletionException(ex);
                     });
         } catch (Exception e) {
             log.info("Have some exception in method upload Video: {}", e.getMessage());
@@ -65,10 +66,8 @@ public class VideoProcessingService {
         log.info("Compressing video");
         File compressedFile = null;
 
-
         try {
             compressedFile = File.createTempFile("compressed_" + System.currentTimeMillis(), ".mp4");
-
 
             if (compressedFile.exists()) {
                 compressedFile.delete();
@@ -80,14 +79,12 @@ public class VideoProcessingService {
                     "-r", "30",
                     "-c:v", "libx264",
                     "-crf", "23",
-                    "-preset", "fast",
-                    "-tune", "fastdecode",
-                    "-vf", "scale=w=720:h=1080:force_original_aspect_ratio=decrease,pad=720:1080:(ow-iw)/2:(oh-ih)/2",
+                    "-preset", "medium",
+                    "-vf", "scale='min(1080,iw)':-2",
                     "-c:a", "aac",
-                    "-b:a", "128k",
+                    "-b:a", "192k",
                     "-movflags", "+faststart",
-                    compressedFile.getAbsolutePath()
-            );
+                    compressedFile.getAbsolutePath());
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -156,9 +153,7 @@ public class VideoProcessingService {
                                     .height(1080)
                                     .crop("fill")
                                     .gravity("center")
-                                    .fetchFormat("jpg")
-                    )
-            );
+                                    .fetchFormat("jpg")));
             log.info("start uploading video to cloudinary");
             Map<String, Object> result = cloudinary.uploader().uploadLarge(compressedFile, metaData);
             List<Map<String, Object>> eagerList = (List<Map<String, Object>>) result.get("eager");

@@ -1,9 +1,11 @@
 package com.example.projectbase.security.jwt;
 
 import com.example.projectbase.base.RestData;
+import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.service.CustomUserDetailsService;
+import com.example.projectbase.service.RedisService;
 import com.example.projectbase.util.BeanUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +23,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Slf4j
 @Component
@@ -34,6 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final CustomUserDetailsService customUserDetailsService;
 
     private final JwtTokenProvider tokenProvider;
+
+    private final RedisService redisService;
 
     @SneakyThrows
     @Override
@@ -57,13 +61,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
             log.info("JWT: {}", jwt);
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                String userId = tokenProvider.extractSubjectFromJwt(jwt);
-                UserDetails userDetails = customUserDetailsService.loadUserById(userId);
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+            if (StringUtils.hasText(jwt)) {
+                if (redisService.hasKey("blacklist:" + jwt)) {
+                    throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
+                }
+
+                if (tokenProvider.validateToken(jwt)) {
+                    String userId = tokenProvider.extractSubjectFromJwt(jwt);
+                    UserDetails userDetails = customUserDetailsService.loadUserById(userId);
+                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
             }
         } catch (UnauthorizedException e) {
             MessageSource messageSource = BeanUtil.getBean(MessageSource.class);
@@ -79,8 +90,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String message = messageSource.getMessage(ex.getMessage(), null, LocaleContextHolder.getLocale());
             response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(message)));
             return;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             log.info("Failed to process authentication request: " + ex.getMessage());
             return;

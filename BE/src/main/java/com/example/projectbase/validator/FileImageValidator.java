@@ -4,8 +4,8 @@ import com.example.projectbase.constant.CommonConstant;
 import com.example.projectbase.validator.annotation.ValidFileImage;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.Objects;
 
 public class FileImageValidator implements ConstraintValidator<ValidFileImage, MultipartFile> {

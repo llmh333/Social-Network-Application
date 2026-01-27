@@ -2,7 +2,7 @@ package com.example.projectbase.domain.entity;
 
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "post_category")

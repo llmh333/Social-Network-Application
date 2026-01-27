@@ -8,7 +8,7 @@ import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.response.RegisterResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
   RegisterResponseDto register(RegisterRequestDto request);

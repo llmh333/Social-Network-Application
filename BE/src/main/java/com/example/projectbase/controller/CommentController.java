@@ -2,12 +2,10 @@ package com.example.projectbase.controller;
 
 import com.example.projectbase.base.RestApiV1;
 import com.example.projectbase.base.VsResponseUtil;
-import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.CommentRequestDto;
 import com.example.projectbase.domain.dto.request.ReplyCommentRequestDto;
 import com.example.projectbase.domain.dto.response.CommentResponseDto;
-import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,10 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -85,9 +82,9 @@ public class CommentController {
     @Operation(summary = "Cập nhật bình luận")
     @PutMapping(UrlConstant.Comment.UPDATE_COMMENT)
     public ResponseEntity<?> updateComment(@PathVariable("commentId") Long commentId,
-                                           @RequestParam("content") String content,
-                                           @PathVariable("postId") Long postId,
-                                           Principal principal) {
+            @RequestParam("content") String content,
+            @PathVariable("postId") Long postId,
+            Principal principal) {
         CommentResponseDto updated = commentService.updateComment(commentId, content, postId, principal.getName());
         return VsResponseUtil.success(updated);
     }

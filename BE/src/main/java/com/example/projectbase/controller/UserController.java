@@ -13,11 +13,12 @@ import com.example.projectbase.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.api.annotations.ParameterObject;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.security.Principal;
 
 @RequiredArgsConstructor
@@ -33,43 +34,40 @@ public class UserController {
   }
 
   @GetMapping(UrlConstant.User.GET_CURRENT_USER)
-  public ResponseEntity<?> getCurrentUser(@Parameter(name = "principal", hidden = true)
-                                          @CurrentUser UserPrincipal principal) {
+  public ResponseEntity<?> getCurrentUser(
+      @Parameter(name = "principal", hidden = true) @CurrentUser UserPrincipal principal) {
     return VsResponseUtil.success(userService.getCurrentUser(principal));
   }
 
   @PostMapping(UrlConstant.User.CREATE_USER)
-  public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto dto){
+  public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto dto) {
     return VsResponseUtil.success(userService.createUser(dto));
   }
 
   @GetMapping(UrlConstant.User.GET_ALL_USERS)
   public ResponseEntity<?> getAllUsers(@Valid @ParameterObject PaginationFullRequestDto requestDTO) {
-      return VsResponseUtil.success(userService.getAllUsers(requestDTO));
+    return VsResponseUtil.success(userService.getAllUsers(requestDTO));
   }
 
-  @PutMapping(UrlConstant.User.UPDATE_USERNAME)
+  @PutMapping(UrlConstant.User.UPDATE_USER)
   public ResponseEntity<?> updateUser(@PathVariable String id,
-                                      @Valid @RequestBody UserUpdateDto dto) {
+      @Valid @RequestBody UserUpdateDto dto) {
     return VsResponseUtil.success(userService.updateUserName(id, dto));
   }
 
   @DeleteMapping(UrlConstant.User.DELETE_USER)
-  public ResponseEntity<?> deleteUser(@PathVariable String id){
+  public ResponseEntity<?> deleteUser(@PathVariable String id) {
     userService.deleteUser(id);
     return VsResponseUtil.success("User deleted successfully");
   }
 
   @PutMapping(UrlConstant.User.CHANGE_PASSWORD)
   public ResponseEntity<?> changePasswordUser(@RequestBody ChangePasswordRequestDto request,
-                                          Principal principal){
+      Principal principal) {
     String username = principal.getName();
     userService.changePassword(username, request);
     return VsResponseUtil.success("Password changed successfully");
 
-
-
   }
-
 
 }

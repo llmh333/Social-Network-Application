@@ -6,7 +6,6 @@ import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.UrlConstant;
 import com.example.projectbase.domain.dto.request.UserSettingRequestDto;
 import com.example.projectbase.exception.UnauthorizedException;
-import com.example.projectbase.security.CurrentUser;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.UserSettingService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,8 @@ public class UserSettingController {
     @PutMapping(UrlConstant.UserSetting.UPDATE_SETTING)
     public ResponseEntity<?> updateUserSetting(
             @RequestBody UserSettingRequestDto request) {
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
         if (userPrincipal == null) {
             throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
         }

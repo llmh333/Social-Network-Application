@@ -1,11 +1,9 @@
 package com.example.projectbase.security.jwt;
 
 import com.example.projectbase.constant.ErrorMessage;
-import com.example.projectbase.exception.UnauthorizedException;
-import com.example.projectbase.repository.TokenBlacklistRepository;
-import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.exception.InvalidException;
-import com.example.projectbase.util.TokenBlacklistUtil;
+import com.example.projectbase.exception.UnauthorizedException;
+import com.example.projectbase.security.UserPrincipal;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +17,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.logging.ErrorManager;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,7 +29,6 @@ public class JwtTokenProvider {
     private final String TYPE_REFRESH = "refresh";
     private final String USERNAME_KEY = "username";
     private final String AUTHORITIES_KEY = "auth";
-    private final TokenBlacklistRepository tokenBlacklistRepository;
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
@@ -74,10 +70,10 @@ public class JwtTokenProvider {
                 || ObjectUtils.isEmpty(claims.get(USERNAME_KEY))) {
             throw new InvalidException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
         }
-        Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+        Collection<? extends GrantedAuthority> authorities = Arrays
+                .stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
         UserDetails principal = new UserPrincipal(claims.get(USERNAME_KEY).toString(), authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
@@ -103,10 +99,6 @@ public class JwtTokenProvider {
             if (token == null) {
                 throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
             }
-            boolean checkTokenBlacklist = TokenBlacklistUtil.isTokenBlacklisted(token, tokenBlacklistRepository);
-            if (checkTokenBlacklist) {
-                throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
-            }
             Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
             return true;
         } catch (SignatureException ex) {
@@ -117,9 +109,16 @@ public class JwtTokenProvider {
             throw new UnauthorizedException(ErrorMessage.Auth.INVALID_ACCESS_TOKEN);
         } catch (ExpiredJwtException ex) {
             log.error("Expired JWT token");
-            TokenBlacklistUtil.addTokenToBlacklist(token, "Expired JWT token", tokenBlacklistRepository);
             throw new UnauthorizedException(ErrorMessage.Auth.EXPIRED_ACCESS_TOKEN);
         }
+    }
+
+    public long getExpirationTimeAccess() {
+        return EXPIRATION_TIME_ACCESS_TOKEN;
+    }
+
+    public long getExpirationTimeRefresh() {
+        return EXPIRATION_TIME_REFRESH_TOKEN;
     }
 
 }

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 @RestApiV1
 @RequiredArgsConstructor
@@ -28,31 +28,35 @@ public class OtpForgotPasswordController {
     private final OtpForgotPasswordService otpForgotPasswordService;
     private final MessageSource messageSource;
 
-    @PostMapping(value = UrlConstant.OtpCode.SEND_OTP)
+    @PostMapping(value = UrlConstant.Auth.SEND_OTP)
     public ResponseEntity<?> sendOtp(@RequestParam("email") String receivedEmail) {
         boolean result = otpForgotPasswordService.sendOtpForgotPassword(receivedEmail);
         if (!result) {
-            String message = messageSource.getMessage(ErrorMessage.OtpForgotPassword.ERR_SEND_FAILED,null, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage(ErrorMessage.OtpForgotPassword.ERR_SEND_FAILED, null,
+                    LocaleContextHolder.getLocale());
             return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
         }
-        String message = messageSource.getMessage(SuccessMessage.ForgotPassword.SEND_OTP_SUCCESSFULLY ,null, LocaleContextHolder.getLocale());
+        String message = messageSource.getMessage(SuccessMessage.ForgotPassword.SEND_OTP_SUCCESSFULLY, null,
+                LocaleContextHolder.getLocale());
         return VsResponseUtil.successWithMessage(message);
     }
 
-    @PostMapping(value = UrlConstant.OtpCode.VERIFY_OTP)
+    @PostMapping(value = UrlConstant.Auth.VERIFY_OTP)
     public ResponseEntity<?> verifyOtp(@RequestParam("otpCode") String otpCode) {
         VerifiedOtpResponseDto response = otpForgotPasswordService.verifyOtpForgotPassword(otpCode);
         if (response == null) {
-            String message = messageSource.getMessage(ErrorMessage.OtpForgotPassword.ERR_VERIFY_FAILED,null, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage(ErrorMessage.OtpForgotPassword.ERR_VERIFY_FAILED, null,
+                    LocaleContextHolder.getLocale());
             return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
         }
         return VsResponseUtil.success(response);
     }
 
-    @PostMapping(value = UrlConstant.OtpCode.CHANGE_PASSWORD)
+    @PostMapping(value = UrlConstant.Auth.CHANGE_PASSWORD)
     public ResponseEntity<?> changePassword(@RequestBody @Valid ConfirmNewPasswordRequestDto requestDto) {
         otpForgotPasswordService.confirmChangeNewPassword(requestDto);
-        String message = messageSource.getMessage(SuccessMessage.ForgotPassword.RESET_PASSWORD_SUCCESSFULLY, null, LocaleContextHolder.getLocale());
+        String message = messageSource.getMessage(SuccessMessage.ForgotPassword.RESET_PASSWORD_SUCCESSFULLY, null,
+                LocaleContextHolder.getLocale());
         return VsResponseUtil.successWithMessage(message);
     }
 }

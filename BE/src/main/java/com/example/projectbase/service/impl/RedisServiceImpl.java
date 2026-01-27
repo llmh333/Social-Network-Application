@@ -17,6 +17,11 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
+    public void save(String key, String value, long timeout, java.util.concurrent.TimeUnit timeUnit) {
+        redisTemplate.opsForValue().set(key, value, timeout, timeUnit);
+    }
+
+    @Override
     public String get(String key) {
         return redisTemplate.opsForValue().get(key) == null ? null : redisTemplate.opsForValue().get(key).toString();
     }
@@ -24,6 +29,11 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public void delete(String key) {
         redisTemplate.delete(key);
+    }
+
+    @Override
+    public boolean hasKey(String key) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }
 
 }

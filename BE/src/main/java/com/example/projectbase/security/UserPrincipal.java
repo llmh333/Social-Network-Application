@@ -2,16 +2,13 @@ package com.example.projectbase.security;
 
 import com.example.projectbase.domain.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Setter;
+import java.util.*;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.util.*;
-
-public class UserPrincipal implements UserDetails, OAuth2User {
+public class UserPrincipal implements UserDetails {
 
     private final String id;
 
@@ -23,9 +20,6 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
     private final String roleName;
 
-    @Setter
-    private Map<String, Object> attributes;
-
     @JsonIgnore
     private final String username;
 
@@ -35,23 +29,22 @@ public class UserPrincipal implements UserDetails, OAuth2User {
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserPrincipal(String id, String firstName, String lastName, String username, String password,
-                         Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
-        this(id, firstName, lastName, username, password, authorities, attributes, "", "USER");
+            Collection<? extends GrantedAuthority> authorities) {
+        this(id, firstName, lastName, username, password, authorities, "", "USER");
     }
 
     public UserPrincipal(String username, Collection<? extends GrantedAuthority> authorities) {
-        this(null, "", "", username, "", authorities, new HashMap<>(), "", "USER");
+        this(null, "", "", username, "", authorities, "", "USER");
     }
 
     public UserPrincipal(String id, String firstName, String lastName, String username, String password,
-                         Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes,
-                         String roleId, String roleName) {
+            Collection<? extends GrantedAuthority> authorities,
+            String roleId, String roleName) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.password = password;
-        this.attributes = attributes;
         this.authorities = authorities == null ? null : new ArrayList<>(authorities);
         this.roleId = roleId;
         this.roleName = roleName;
@@ -71,30 +64,8 @@ public class UserPrincipal implements UserDetails, OAuth2User {
                 user.getUsername(),
                 user.getPassword(),
                 authorities,
-                new HashMap<>(),
                 roleId,
-                roleName
-        );
-    }
-
-    public static OAuth2User create(User user, Map<String, Object> attributes) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        String roleName = user.getRole() != null ? user.getRole().getName() : "USER";
-        String roleId = user.getRole() != null ? String.valueOf(user.getRole().getId()) : "";
-
-        authorities.add(new SimpleGrantedAuthority(roleName));
-
-        return new UserPrincipal(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUsername(),
-                user.getPassword(),
-                authorities,
-                attributes,
-                roleId,
-                roleName
-        );
+                roleName);
     }
 
     public String getId() {
@@ -117,7 +88,6 @@ public class UserPrincipal implements UserDetails, OAuth2User {
         return roleName;
     }
 
-
     @Override
     public String getUsername() {
         return username;
@@ -126,11 +96,6 @@ public class UserPrincipal implements UserDetails, OAuth2User {
     @Override
     public String getPassword() {
         return password;
-    }
-
-    @Override
-    public Map<String, Object> getAttributes() {
-        return attributes;
     }
 
     @Override
@@ -169,10 +134,5 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    @Override
-    public String getName() {
-        return username;
     }
 }

@@ -3,7 +3,7 @@ package com.example.projectbase.domain.dto.request;
 import com.example.projectbase.constant.LanguageSetting;
 import com.example.projectbase.constant.ThemeSetting;
 import lombok.Data;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @Data
 public class UserSettingRequestDto {

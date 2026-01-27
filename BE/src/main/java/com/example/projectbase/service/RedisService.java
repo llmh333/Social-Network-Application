@@ -2,10 +2,13 @@ package com.example.projectbase.service;
 
 public interface RedisService {
 
-    public void save(String key, String value);
+    void save(String key, String value);
 
+    void save(String key, String value, long timeout, java.util.concurrent.TimeUnit timeUnit);
 
-    public String get(String key);
+    String get(String key);
 
-    public void delete(String key);
+    void delete(String key);
+
+    boolean hasKey(String key);
 }

@@ -36,3 +36,16 @@ build/
 ### VS Code ###
 .vscode/
 
+### Agent ###
+.agent
+agent_rules
+
+### ENV ###
+.env
+.env.prod
+.env.dev
+!.env.example
+
+### Firebase ###
+firebase.json
+

@@ -3,7 +3,7 @@ package com.example.projectbase.domain.dto.request;
 import com.example.projectbase.constant.ErrorMessage;
 import lombok.*;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 @Setter
 @Getter

@@ -15,11 +15,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +29,9 @@ import java.util.TimeZone;
 
 @Slf4j
 @RequiredArgsConstructor
-@EnableConfigurationProperties({AdminInfoProperties.class})
+@EnableConfigurationProperties({ AdminInfoProperties.class })
 @SpringBootApplication
+@EnableJpaAuditing
 @EnableWebSecurity
 @EnableScheduling
 public class ProjectBaseApplication {
@@ -63,7 +65,7 @@ public class ProjectBaseApplication {
   @Bean
   CommandLineRunner init(AdminInfoProperties userInfo) {
     return args -> {
-      //init role
+      // init role
       Optional<Role> role = roleRepository.findByRoleName(RoleConstant.ADMIN);
       if (role.isEmpty()) {
         List<String> permissions = new ArrayList<>();
@@ -75,20 +77,20 @@ public class ProjectBaseApplication {
         roleRepository.save(Role.builder().name(RoleConstant.USER).permissions(permissions).build());
       }
       role = roleRepository.findByRoleName(RoleConstant.ADMIN);
-      //init admin
+      // init admin
       Optional<User> user = userRepository.findByUsername("admin");
       if (user.isEmpty()) {
         User admin = User.builder()
-                .username(userInfo.getUsername())
-                .password(passwordEncoder.encode(userInfo.getPassword()))
-                .firstName(userInfo.getFirstName())
-                .lastName(userInfo.getLastName())
-                .role(role.get())
-                .gender(GenderConstant.MALE)
-                .email(userInfo.getEmail())
-                .dob(LocalDate.now())
-                .email(userInfo.getEmail())
-                .build();
+            .username(userInfo.getUsername())
+            .password(passwordEncoder.encode(userInfo.getPassword()))
+            .firstName(userInfo.getFirstName())
+            .lastName(userInfo.getLastName())
+            .role(role.get())
+            .gender(GenderConstant.MALE)
+            .email(userInfo.getEmail())
+            .dob(LocalDate.now())
+            .email(userInfo.getEmail())
+            .build();
         userRepository.save(admin);
       }
     };

@@ -17,11 +17,12 @@ import com.example.projectbase.domain.mapper.UserMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
-import com.example.projectbase.repository.TokenBlacklistRepository;
 import com.example.projectbase.repository.UserRepository;
 import com.example.projectbase.repository.UserSessionRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.UserService;
+import com.example.projectbase.service.RedisService;
+import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.util.PaginationUtil;
 import com.example.projectbase.util.TokenBlacklistUtil;
 import lombok.RequiredArgsConstructor;
@@ -47,17 +48,19 @@ public class UserServiceImpl implements UserService {
 
   private final UserSessionRepository userSessionRepository;
 
-  private final TokenBlacklistRepository tokenBlacklistRepository;
-
   private final UserMapper userMapper;
 
   private final PasswordEncoder passwordEncoder;
+
+  private final RedisService redisService;
+
+  private final JwtTokenProvider jwtTokenProvider;
 
   @PreAuthorize("isAuthenticated() or hasRole('ADMIN')")
   @Override
   public UserResponseDto getUserById(String userId) {
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
+        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[] { userId }));
     return userMapper.toUserDto(user);
   }
 
@@ -72,7 +75,8 @@ public class UserServiceImpl implements UserService {
   public UserResponseDto createUser(UserCreateDto dto) {
     User user = userMapper.toUser(dto);
     Role role = roleRepository.findByRoleName("USER")
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.Role.ERR_NOT_FOUND, new String[]{RoleConstant.USER.toString()}));
+        .orElseThrow(() -> new NotFoundException(ErrorMessage.Role.ERR_NOT_FOUND,
+            new String[] { RoleConstant.USER.toString() }));
     user.setRole(role);
     return userMapper.toUserDto(userRepository.save(user));
   }
@@ -85,8 +89,8 @@ public class UserServiceImpl implements UserService {
     Page<User> pageUser = userRepository.findAll(pageable);
 
     List<UserResponseDto> userResponseDtos = pageUser.getContent().stream()
-            .map(userMapper::toUserDto)
-            .collect(Collectors.toList());
+        .map(userMapper::toUserDto)
+        .collect(Collectors.toList());
 
     String sortBy = "";
     String sortType = "";
@@ -101,13 +105,12 @@ public class UserServiceImpl implements UserService {
     }
 
     PagingMeta meta = new PagingMeta(
-            pageUser.getTotalElements(),
-            pageUser.getTotalPages(),
-            pageUser.getNumber(),
-            pageUser.getSize(),
-            sortBy,
-            sortType
-    );
+        pageUser.getTotalElements(),
+        pageUser.getTotalPages(),
+        pageUser.getNumber(),
+        pageUser.getSize(),
+        sortBy,
+        sortType);
 
     return new PaginationResponseDto<>(meta, userResponseDtos);
 
@@ -117,7 +120,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserResponseDto updateUserName(String id, UserUpdateDto dto) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
+        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[] { id }));
 
     userMapper.updateUserFromDto(dto, user);
 
@@ -130,12 +133,17 @@ public class UserServiceImpl implements UserService {
   @Transactional
   public void deleteUser(String id) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{id}));
+        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[] { id }));
     List<UserSession> userSessions = userSessionRepository.findAllByUsername(user.getUsername());
     if (!userSessions.isEmpty()) {
+      long accessExpiry = jwtTokenProvider.getExpirationTimeAccess();
+      long refreshExpiry = jwtTokenProvider.getExpirationTimeRefresh();
+
       userSessions.forEach(userSession -> {
-        TokenBlacklistUtil.addTokenToBlacklist(userSession.getToken(), "Logout token", tokenBlacklistRepository);
-        TokenBlacklistUtil.addTokenToBlacklist(userSession.getRefreshToken(), "Logout refresh token", tokenBlacklistRepository);
+        redisService.save("blacklist:" + userSession.getToken(), "User deleted", accessExpiry,
+            java.util.concurrent.TimeUnit.MINUTES);
+        redisService.save("blacklist:" + userSession.getRefreshToken(), "User deleted", refreshExpiry,
+            java.util.concurrent.TimeUnit.MINUTES);
       });
     }
     userSessionRepository.deleteAllByUsername(user.getUsername());
@@ -145,8 +153,8 @@ public class UserServiceImpl implements UserService {
   @PreAuthorize("#username == authentication.principal.username or hasRole('ADMIN')")
   @Override
   public void changePassword(String username, ChangePasswordRequestDto request) {
-      User user = userRepository.findByUsername(username)
-              .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{username}));
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[] { username }));
 
     if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
       throw new BadRequestException(ErrorMessage.OtpForgotPassword.ERR_OLD_PASSWORD_INCORRECT);
@@ -155,6 +163,5 @@ public class UserServiceImpl implements UserService {
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);
   }
-
 
 }
