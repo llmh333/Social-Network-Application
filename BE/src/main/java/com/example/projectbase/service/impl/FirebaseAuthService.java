@@ -7,12 +7,10 @@ import com.example.projectbase.domain.dto.request.FirebaseLoginRequest;
 import com.example.projectbase.domain.dto.response.LoginResponseDto;
 
 import com.example.projectbase.domain.entity.User;
-import com.example.projectbase.domain.entity.UserSession;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
-import com.example.projectbase.repository.UserSessionRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.util.TokenBlacklistUtil;
@@ -43,7 +41,6 @@ public class FirebaseAuthService {
    private final UserRepository userRepository;
    private final RoleRepository roleRepository;
    private final JwtTokenProvider jwtTokenProvider;
-   private final UserSessionRepository userSessionRepository;
    private final RedisServiceImpl redisService;
    private final ObjectMapper objectMapper;
 
@@ -83,9 +80,7 @@ public class FirebaseAuthService {
          String accessToken = jwtTokenProvider.generateToken(userPrincipal, false);
          String refreshToken = jwtTokenProvider.generateToken(userPrincipal, true);
 
-         // 4. Create Session
-         String ipAddress = TokenBlacklistUtil.getClientIP(httpRequest);
-         createOrUpdateSession(user, accessToken, refreshToken, ipAddress, userPrincipal.getUsername());
+         createOrUpdateSession(userPrincipal.getUsername());
 
          return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
 
@@ -98,17 +93,8 @@ public class FirebaseAuthService {
       }
    }
 
-   private void createOrUpdateSession(User user, String accessToken, String refreshToken, String ipAddress,
-         String username) {
-      UserSession userSession = new UserSession();
-      userSession.setIpAddress(ipAddress);
-      userSession.setToken(accessToken);
-      userSession.setRefreshToken(refreshToken);
-      userSession.setUsername(username);
-      userSession.setUser(user);
-      userSession.setIsActive(true);
-      userSessionRepository.save(userSession);
-
+   private void createOrUpdateSession(String username) {
+      // Just update Redis for "Online" status, no DB persistence
       try {
          Map<String, Object> dataSession = new HashMap<>();
          dataSession.put("username", username);

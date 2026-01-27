@@ -32,11 +32,12 @@ public class ImageProcessingService {
     private final Cloudinary cloudinary;
     private final MediaMapper mediaMapper;
 
-    @Async("imageProcessingExecutor")
+    @Async("rawImageExecutor")
     public CompletableFuture<MediaResponseDto> uploadImage(File imageFile, String contentTypeFile, String userId) {
         try {
             MediaProcessingUtil.validateFile(imageFile, contentTypeFile);
-            Media imagePending = MediaProcessingUtil.createMediaPending(imageFile, "image", userId, null, mediaRepository, userRepository);
+            Media imagePending = MediaProcessingUtil.createMediaPending(imageFile, "image", userId, null,
+                    mediaRepository, userRepository);
 
             MediaResponseDto responseDto = uploadImageToCloudinary(imageFile, imagePending);
 
@@ -48,8 +49,9 @@ public class ImageProcessingService {
 
     }
 
-    @Async("imageProcessingExecutor")
-    public CompletableFuture<List<MediaResponseDto>> uploadMultipleImages(List<File> imageFiles, List<String> contentTypeFileList, String userId) {
+    @Async("rawImageExecutor")
+    public CompletableFuture<List<MediaResponseDto>> uploadMultipleImages(List<File> imageFiles,
+            List<String> contentTypeFileList, String userId) {
 
         List<CompletableFuture<MediaResponseDto>> futures = new ArrayList<>();
 
@@ -65,10 +67,8 @@ public class ImageProcessingService {
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenApply(v -> futures.stream()
                         .map(CompletableFuture::join)
-                        .collect(Collectors.toList())
-                );
+                        .collect(Collectors.toList()));
     }
-
 
     private MediaResponseDto uploadImageToCloudinary(File imageFile, Media imageUpload) {
         log.info("Uploading video to cloudinary");
@@ -78,8 +78,7 @@ public class ImageProcessingService {
                     "resource_type", "image",
                     "quality", "auto",
                     "fetch_format", "auto",
-                    "public_id", imageUpload.getPublicId()
-            );
+                    "public_id", imageUpload.getPublicId());
             log.info("start uploading video to cloudinary");
             Map<String, Object> result = cloudinary.uploader().upload(imageFile, metaData);
 
@@ -110,7 +109,8 @@ public class ImageProcessingService {
             }
         }
     }
-    @Async("imageProcessingExecutor")
+
+    @Async("rawImageExecutor")
     public void updateMediaStatusAsync(Media media, UploadStatusConstant status) {
         try {
             media.setStatus(status);

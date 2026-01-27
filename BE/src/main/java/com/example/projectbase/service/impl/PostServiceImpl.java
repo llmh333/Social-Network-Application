@@ -86,7 +86,13 @@ public class PostServiceImpl implements PostService {
 
         PostCategory postCategory = postCategoryService.createPostCategory(requestDto.getCategory());
 
-        Post post = buildPostFromDto(requestDto, postCategory);
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID,
+                        new String[] { userPrincipal.getId() }));
+
+        Post post = buildPostFromDto(requestDto, postCategory, user);
         post.setStatus(PostStatusConstant.PENDING_MODERATION);
         Post savedPost = postRepository.save(post);
 
@@ -100,7 +106,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    @PreAuthorize("isAuthenticated() and @postServiceImpl.isOwner(#postId, authentication.username)")
+    @PreAuthorize("isAuthenticated() and @postServiceImpl.isOwner(#postId, authentication.name)")
     @Transactional
     @Override
     public void deletePost(Long postId) {
@@ -174,7 +180,7 @@ public class PostServiceImpl implements PostService {
         return new PaginationResponseDto(meta, dtoList);
     }
 
-    private Post buildPostFromDto(PostRequestDto requestDto, PostCategory postCategory) {
+    private Post buildPostFromDto(PostRequestDto requestDto, PostCategory postCategory, User user) {
         return Post.builder()
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
@@ -184,6 +190,7 @@ public class PostServiceImpl implements PostService {
                 .category(postCategory)
                 .mediaType(requestDto.getMediaType())
                 .mediaList(new ArrayList<>())
+                .user(user)
                 .build();
     }
 
@@ -195,10 +202,7 @@ public class PostServiceImpl implements PostService {
 
     public boolean isOwner(Long postId, String username) {
         Post post = findPostOrThrow(postId);
-        User user = userRepository.findById(post.getCreatedBy())
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID,
-                        new String[] { String.valueOf(post.getCreatedBy()) }));
-        return user.getUsername().equals(username);
+        return post.getUser().getUsername().equals(username);
     }
 
     private List<String> getTrendingCategories() {

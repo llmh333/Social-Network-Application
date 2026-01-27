@@ -6,7 +6,6 @@ import com.example.projectbase.domain.entity.common.DateAuditing;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.springframework.data.annotation.CreatedBy;
 
 import jakarta.persistence.*;
 import java.util.ArrayList;
@@ -37,10 +36,10 @@ public class Post extends DateAuditing {
     private PostCategory category;
 
     @ManyToOne
-    @JoinColumn(name= "original_post_id")
+    @JoinColumn(name = "original_post_id")
     private Post originalPost;
 
-    @Column(name = "media_type",  nullable = false)
+    @Column(name = "media_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private MediaType mediaType;
 
@@ -62,9 +61,9 @@ public class Post extends DateAuditing {
     @Column(name = "share_count", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long shareCount = 0L;
 
-    @CreatedBy
-    @Column(name = "created_by")
-    private String createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -72,8 +71,11 @@ public class Post extends DateAuditing {
 
     @PrePersist
     public void prePersist() {
-        if (reactionCount == null) reactionCount = 0L;
-        if (commentCount == null) commentCount = 0L;
-        if (shareCount == null) shareCount = 0L;
+        if (reactionCount == null)
+            reactionCount = 0L;
+        if (commentCount == null)
+            commentCount = 0L;
+        if (shareCount == null)
+            shareCount = 0L;
     }
 }

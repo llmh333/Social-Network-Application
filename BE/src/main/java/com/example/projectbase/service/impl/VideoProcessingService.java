@@ -36,7 +36,7 @@ public class VideoProcessingService {
     private final Cloudinary cloudinary;
     private final UserRepository userRepository;
 
-    @Async("videoProcessingExecutor")
+    @Async("rawVideoExecutor")
     public CompletableFuture<MediaResponseDto> uploadVideo(File videoFile, String contentTypeFile, String userId) {
         try {
             MediaProcessingUtil.validateFile(videoFile, contentTypeFile);
@@ -61,7 +61,7 @@ public class VideoProcessingService {
 
     }
 
-    @Async("videoProcessingExecutor")
+    @Async("rawVideoExecutor")
     public CompletableFuture<File> compressVideo(File originalFile, Media media) {
         log.info("Compressing video");
         File compressedFile = null;
@@ -193,7 +193,7 @@ public class VideoProcessingService {
 
     }
 
-    @Async("videoProcessingExecutor")
+    @Async("rawVideoExecutor")
     public void updateMediaStatusAsync(Media media, UploadStatusConstant status) {
         try {
             media.setStatus(status);

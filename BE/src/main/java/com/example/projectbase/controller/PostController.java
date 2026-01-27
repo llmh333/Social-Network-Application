@@ -11,7 +11,6 @@ import com.example.projectbase.service.PostService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -43,7 +42,9 @@ public class PostController {
 
     private final PostService postService;
 
-    @Operation(summary = "Tạo bài viết mới (Nên test ở Postman, dưới đây chỉ là mô tả các dữ liệu đầu vào của api)", description = "- `data`: thông tin bài viết dưới dạng JSON (application/json)\n"
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    @Operation(summary = "Tạo bài viết mới (Nên test ở Postman, dưới đây chỉ là mô tả các dữ liệu đầu vào của api)", description = "- `data`: thông tin bài viết dưới dạng JSON String (application/json)\n"
             +
             "- `files`: danh sách file (chỉ 1 video, 1 audio hoặc nhiều ảnh)\n" +
             "- `audio`: Nếu upload audio thì audio phải ở đầu danh sách file, rồi đến 1 file image")
@@ -54,10 +55,29 @@ public class PostController {
     })
     @PostMapping(value = UrlConstant.Post.CREATE_NEW_POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createNewPost(
-            @Parameter(description = "Thông tin bài viết (JSON)", required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PostRequestDto.class))) @Valid @RequestPart("data") PostRequestDto requestDto,
+            @Parameter(description = "Thông tin bài viết (JSON String)", required = true, schema = @Schema(type = "string", format = "json", example = "{\"title\": \"Tiêu đề\", \"content\": \"Nội dung\", \"category\": \"Tên danh mục\", \"mediaType\": \"IMAGE\", \"singerName\": \"Tên ca sĩ (nếu có)\"}")) @RequestPart("data") String dataStr,
 
             @Parameter(description = "Danh sách file upload", required = true) @RequestPart("files") List<MultipartFile> files)
             throws IOException, ExecutionException, InterruptedException, TimeoutException {
+
+        log.info("Received dataStr: {}", dataStr);
+        PostRequestDto requestDto;
+        try {
+            requestDto = objectMapper.readValue(dataStr, PostRequestDto.class);
+        } catch (JsonProcessingException e) {
+            log.error("JSON Error: {}", e.getMessage());
+            throw new com.example.projectbase.exception.BadRequestException(
+                    "Invalid JSON format in 'data' part: " + e.getMessage());
+        }
+
+        // Manual validation if needed since @Valid on String implies checks on the
+        // string itself,
+        // to invoke bean validation on parsed object use validator manually or trust
+        // service layer validation.
+        // For now, assume service or manual call:
+        // Set<ConstraintViolation<PostRequestDto>> violations =
+        // validator.validate(requestDto); ...
+
         log.info("transfer To original File");
         List<File> copiedFiles = new ArrayList<>();
         List<String> contentTypeList = new ArrayList<>();

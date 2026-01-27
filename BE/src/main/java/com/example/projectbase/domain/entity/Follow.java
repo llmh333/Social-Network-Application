@@ -2,11 +2,8 @@ package com.example.projectbase.domain.entity;
 
 import com.example.projectbase.domain.entity.common.DateAuditing;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
-import org.springframework.data.annotation.CreatedDate;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor

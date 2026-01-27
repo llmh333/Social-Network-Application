@@ -2,7 +2,6 @@ package com.example.projectbase.service.impl;
 
 import com.example.projectbase.constant.ErrorMessage;
 import com.example.projectbase.constant.RoleConstant;
-import com.example.projectbase.constant.UserStatus;
 import com.example.projectbase.domain.dto.request.LoginRequestDto;
 import com.example.projectbase.domain.dto.request.RegisterRequestDto;
 import com.example.projectbase.domain.dto.request.TokenRefreshRequestDto;
@@ -11,27 +10,19 @@ import com.example.projectbase.domain.dto.response.LoginResponseDto;
 import com.example.projectbase.domain.dto.response.RegisterResponseDto;
 import com.example.projectbase.domain.dto.response.TokenRefreshResponseDto;
 import com.example.projectbase.domain.entity.User;
-import com.example.projectbase.domain.entity.UserSession;
 import com.example.projectbase.domain.mapper.UserMapper;
 import com.example.projectbase.exception.ConflictException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.exception.UnauthorizedException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
-import com.example.projectbase.repository.UserSessionRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.service.AuthService;
 import com.example.projectbase.service.RedisService;
-import com.example.projectbase.util.TokenBlacklistUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -44,9 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -56,14 +44,11 @@ public class AuthServiceImpl implements AuthService {
   private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
-  private final UserSessionRepository userSessionRepository;
   private final AuthenticationManager authenticationManager;
   private final JwtTokenProvider jwtTokenProvider;
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
   private final RedisService redisService;
-  private final ObjectMapper objectMapper;
-  private final RedisTemplate redisTemplate;
   private final UserMapper userMapper;
 
   @Override
@@ -93,15 +78,6 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public LoginResponseDto login(LoginRequestDto request, HttpServletRequest httpServletRequest) {
     try {
-
-      List<UserSession> userSessions = userSessionRepository.findAllByUsername(request.getUsernameOrEmail());
-      if (!userSessions.isEmpty()) {
-        for (UserSession userSession : userSessions) {
-          if (userSession.getIsActive())
-            throw new ConflictException(ErrorMessage.Auth.ERR_ALREADY_LOGGED_IN);
-        }
-      }
-
       Authentication authentication = authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword()));
       SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -110,40 +86,13 @@ public class AuthServiceImpl implements AuthService {
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, false);
       String refreshToken = jwtTokenProvider.generateToken(userPrincipal, true);
 
-      User user = userRepository.findById(userPrincipal.getId())
-          .orElseThrow(
-              () -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[] { userPrincipal.getId() }));
+      // Stateless: No DB session creation.
 
-      String ipAddress = TokenBlacklistUtil.getClientIP(httpServletRequest);
-
-      UserSession userSession = userSessionRepository.findByIpAddressAndUsername(ipAddress,
-          userPrincipal.getUsername());
-      if (userSession == null) {
-        userSession = new UserSession();
-        userSession.setIpAddress(ipAddress);
-        userSession.setToken(accessToken);
-        userSession.setRefreshToken(refreshToken);
-        userSession.setUsername(userPrincipal.getUsername());
-        userSession.setUser(user);
-        userSession.setIsActive(true);
-      } else {
-        userSession.setIsActive(true);
-      }
-      userSessionRepository.save(userSession);
-
-      Map<String, Object> dataSession = new HashMap<>();
-      dataSession.put("username", userPrincipal.getUsername());
-      dataSession.put("status", UserStatus.ONLINE.name());
-      dataSession.put("last_activity", LocalDateTime.now().toString());
-      String json = objectMapper.writeValueAsString(dataSession);
-      redisService.save("username:" + userPrincipal.getUsername() + ":session", json);
       return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
     } catch (InternalAuthenticationServiceException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME);
     } catch (BadCredentialsException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_PASSWORD);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
     }
   }
 
@@ -162,17 +111,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     try {
-
       if (jwtTokenProvider.validateToken(refreshToken)) {
         String username = jwtTokenProvider.extractClaimUsername(refreshToken);
         UserPrincipal userPrincipal = (UserPrincipal) userDetailsService.loadUserByUsername(username);
         String newAccessToken = jwtTokenProvider.generateToken(userPrincipal, false);
-        UserSession userSession = userSessionRepository.findByRefreshToken(refreshToken);
-        if (userSession == null) {
-          throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
-        }
-        userSession.setToken(newAccessToken);
-        userSessionRepository.save(userSession);
+
+        // No DB session check
+
         logger.info("Refresh token successful for user: {}", username);
         return new TokenRefreshResponseDto(newAccessToken, refreshToken);
       }
@@ -189,69 +134,13 @@ public class AuthServiceImpl implements AuthService {
     String bearerToken = request.getHeader("Authorization");
     String token = bearerToken.substring(7);
     logger.info("Logout token: {}", token);
-    UserSession userSession = userSessionRepository.findByToken(token);
-    if (userSession == null) {
-      throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
-    }
-    userSession.setIsActive(false);
-    userSessionRepository.save(userSession);
 
-    // Add to Redis Blacklist
     long accessTokenExpiry = jwtTokenProvider.getExpirationTimeAccess();
-    long refreshTokenExpiry = jwtTokenProvider.getExpirationTimeRefresh();
 
     redisService.save("blacklist:" + token, "logout", accessTokenExpiry, TimeUnit.MINUTES);
-    redisService.save("blacklist:" + userSession.getRefreshToken(), "logout", refreshTokenExpiry, TimeUnit.MINUTES);
 
     SecurityContextHolder.clearContext();
     return new CommonResponseDto(true, "Logged out successfully");
-  }
-
-  @Scheduled(fixedRate = 7 * 60 * 1000L)
-  @Transactional
-  public void checkUserStatus() {
-    logger.info("Checking user status");
-    Set<String> keys = redisTemplate.keys("username:*:session");
-    List<String> usernamesToDeactivate = new ArrayList<>();
-    try {
-      for (String key : keys) {
-        String username = key.substring(key.indexOf(":") + 1, key.lastIndexOf(":"));
-        String json = redisService.get(key);
-        if (json == null)
-          continue;
-
-        Map<String, Object> sessionMap = objectMapper.readValue(json, new TypeReference<>() {
-        });
-
-        String lastActivityStr = (String) sessionMap.get("last_activity");
-        if (lastActivityStr != null) {
-          LocalDateTime lastActivity = LocalDateTime.parse(lastActivityStr);
-          LocalDateTime now = LocalDateTime.now();
-          Duration duration = Duration.between(lastActivity, now);
-
-          if (duration.toMinutes() >= 10 && duration.toMinutes() <= 15) {
-            sessionMap.put("status", UserStatus.BUSY.name());
-          } else if (duration.toMinutes() > 15) {
-            sessionMap.put("status", UserStatus.OFFLINE.name());
-            usernamesToDeactivate.add(username);
-          }
-
-          String updatedJson = objectMapper.writeValueAsString(sessionMap);
-          redisService.save("username:" + username + ":session", updatedJson);
-        }
-      }
-
-      if (!usernamesToDeactivate.isEmpty()) {
-        userSessionRepository.deactivateUsers(usernamesToDeactivate);
-      }
-
-      logger.info("Checked user status");
-    } catch (JsonProcessingException ex) {
-      logger.error("JSON Error in checkUserStatus", ex);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
-
   }
 
 }

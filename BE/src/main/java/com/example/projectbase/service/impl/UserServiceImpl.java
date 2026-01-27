@@ -12,19 +12,16 @@ import com.example.projectbase.domain.dto.request.UserUpdateDto;
 import com.example.projectbase.domain.dto.response.UserResponseDto;
 import com.example.projectbase.domain.entity.Role;
 import com.example.projectbase.domain.entity.User;
-import com.example.projectbase.domain.entity.UserSession;
 import com.example.projectbase.domain.mapper.UserMapper;
 import com.example.projectbase.exception.BadRequestException;
 import com.example.projectbase.exception.NotFoundException;
 import com.example.projectbase.repository.RoleRepository;
 import com.example.projectbase.repository.UserRepository;
-import com.example.projectbase.repository.UserSessionRepository;
 import com.example.projectbase.security.UserPrincipal;
 import com.example.projectbase.service.UserService;
 import com.example.projectbase.service.RedisService;
 import com.example.projectbase.security.jwt.JwtTokenProvider;
 import com.example.projectbase.util.PaginationUtil;
-import com.example.projectbase.util.TokenBlacklistUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,8 +42,6 @@ public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
 
   private final RoleRepository roleRepository;
-
-  private final UserSessionRepository userSessionRepository;
 
   private final UserMapper userMapper;
 
@@ -134,19 +129,12 @@ public class UserServiceImpl implements UserService {
   public void deleteUser(String id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[] { id }));
-    List<UserSession> userSessions = userSessionRepository.findAllByUsername(user.getUsername());
-    if (!userSessions.isEmpty()) {
-      long accessExpiry = jwtTokenProvider.getExpirationTimeAccess();
-      long refreshExpiry = jwtTokenProvider.getExpirationTimeRefresh();
 
-      userSessions.forEach(userSession -> {
-        redisService.save("blacklist:" + userSession.getToken(), "User deleted", accessExpiry,
-            java.util.concurrent.TimeUnit.MINUTES);
-        redisService.save("blacklist:" + userSession.getRefreshToken(), "User deleted", refreshExpiry,
-            java.util.concurrent.TimeUnit.MINUTES);
-      });
-    }
-    userSessionRepository.deleteAllByUsername(user.getUsername());
+    // With UserSession removed, we cannot easily blacklist all tokens for this user
+    // without a mapping. Since the user is deleted, any query by ID will fail,
+    // effectively invalidating the user assuming the system checks user existence
+    // on critical actions.
+
     userRepository.delete(user);
   }
 

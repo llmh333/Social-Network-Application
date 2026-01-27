@@ -58,7 +58,7 @@ public class PostMediaService {
             return;
          }
 
-         processAndSaveMedia(post, filesToProcess, contentTypeList, singerName, post.getCreatedBy());
+         processAndSaveMedia(post, filesToProcess, contentTypeList, singerName, post.getUser().getId());
 
       } catch (Exception e) {
          log.error("Error processing media for postId: {}", postId, e);

@@ -38,15 +38,18 @@ public class AudioProcessingService {
     private final Cloudinary cloudinary;
     private final ImageProcessingService imageProcessingService;
 
-    @Async("audioProcessingExecutor")
-    public CompletableFuture<List<MediaResponseDto>> uploadAudio(File audioFile, File thumbnailFile, List<String> contentTypeFileList, String singerName, String userId) {
+    @Async("rawAudioExecutor")
+    public CompletableFuture<List<MediaResponseDto>> uploadAudio(File audioFile, File thumbnailFile,
+            List<String> contentTypeFileList, String singerName, String userId) {
         try {
             MediaProcessingUtil.validateFile(audioFile, contentTypeFileList.get(0));
-            Media audioPending = MediaProcessingUtil.createMediaPending(audioFile, "audio",userId,  singerName, mediaRepository, userRepository);
+            Media audioPending = MediaProcessingUtil.createMediaPending(audioFile, "audio", userId, singerName,
+                    mediaRepository, userRepository);
 
-            return compressAudioAsync(audioFile,audioPending).thenApply(compressedFile -> {
+            return compressAudioAsync(audioFile, audioPending).thenApply(compressedFile -> {
                 try {
-                    List<MediaResponseDto> responseDtoList = uploadAudioToCloudinary(compressedFile, thumbnailFile, contentTypeFileList.get(1), audioPending, userId);
+                    List<MediaResponseDto> responseDtoList = uploadAudioToCloudinary(compressedFile, thumbnailFile,
+                            contentTypeFileList.get(1), audioPending, userId);
                     return responseDtoList;
                 } catch (ExecutionException e) {
                     log.info("Error executor in method audioUpload: {}", e.getCause());
@@ -63,7 +66,7 @@ public class AudioProcessingService {
         }
     }
 
-    @Async("audioProcessingExecutor")
+    @Async("rawAudioExecutor")
     public CompletableFuture<File> compressAudioAsync(File audioFile, Media media) {
         File compressFile = compressAudio(audioFile, media);
         return CompletableFuture.completedFuture(compressFile);
@@ -87,8 +90,7 @@ public class AudioProcessingService {
                     "-vn",
                     "-c:a", "aac",
                     "-b:a", "192k",
-                    compressedFile.getAbsolutePath()
-            );
+                    compressedFile.getAbsolutePath());
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -123,18 +125,20 @@ public class AudioProcessingService {
             }
             updateMediaStatusAsync(media, UploadStatusConstant.ERROR);
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             if (audioFile.exists() && audioFile != null) {
                 audioFile.delete();
             }
         }
     }
 
-    private List<MediaResponseDto> uploadAudioToCloudinary(File compressedFile, File thumbnailFile, String contentTypeFile, Media audioUpload, String userId) throws ExecutionException, InterruptedException {
+    private List<MediaResponseDto> uploadAudioToCloudinary(File compressedFile, File thumbnailFile,
+            String contentTypeFile, Media audioUpload, String userId) throws ExecutionException, InterruptedException {
 
         log.info("Uploading audio to cloudinary");
         List<MediaResponseDto> responseDtoList = new ArrayList<>();
-        CompletableFuture<MediaResponseDto> uploadThumbnail = imageProcessingService.uploadImage(thumbnailFile, contentTypeFile, userId);
+        CompletableFuture<MediaResponseDto> uploadThumbnail = imageProcessingService.uploadImage(thumbnailFile,
+                contentTypeFile, userId);
         MediaResponseDto thumbnailResult = uploadThumbnail.get();
         responseDtoList.add(thumbnailResult);
         try {
@@ -150,9 +154,7 @@ public class AudioProcessingService {
                                     .overlay(thumbnailResult.getPublicId())
                                     .crop("fill")
                                     .width("300")
-                                    .height("300")
-                    )
-            );
+                                    .height("300")));
             log.info("start uploading audio to cloudinary");
             Map<String, Object> result = cloudinary.uploader().uploadLarge(compressedFile, metaData);
             log.info("result: {}", result);
@@ -183,8 +185,7 @@ public class AudioProcessingService {
         }
     }
 
-
-    @Async("audioProcessingExecutor")
+    @Async("rawAudioExecutor")
     public void updateMediaStatusAsync(Media media, UploadStatusConstant status) {
         try {
             media.setStatus(status);

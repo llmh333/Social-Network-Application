@@ -1,6 +1,5 @@
 package com.example.projectbase.domain.dto.response;
 
-import com.example.projectbase.domain.entity.PostCategory;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 

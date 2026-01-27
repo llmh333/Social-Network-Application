@@ -5,8 +5,8 @@ import com.example.projectbase.domain.entity.common.DateAuditing;
 import com.example.projectbase.constant.AuthProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
+import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -23,9 +23,7 @@ import java.util.List;
 public class User extends DateAuditing {
 
   @Id
-  @GeneratedValue(generator = "uuid2")
-  @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-  @Column(insertable = false, updatable = false, nullable = false, columnDefinition = "CHAR(36)")
+  @UuidGenerator(style = UuidGenerator.Style.TIME)
   private String id;
 
   @Column(nullable = false, unique = true)
@@ -55,10 +53,10 @@ public class User extends DateAuditing {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "auth_provider", nullable = true)
-  private AuthProvider provider;          // local, google, facebook
+  private AuthProvider provider; // local, google, facebook
 
   @Column(name = "provider_id")
-  private String providerId;              // Google/Facebook user ID
+  private String providerId; // Google/Facebook user ID
 
   @Column(name = "image_url")
   private String imageUrl;
@@ -72,9 +70,6 @@ public class User extends DateAuditing {
 
   @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Follow> followers = new ArrayList<>();
-
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<UserSession> userSessions = new ArrayList<>();
 
   @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "setting_id", referencedColumnName = "id")
